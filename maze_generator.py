@@ -1,70 +1,50 @@
 from random import*
 
-WEST = 0
-NORTH = 1
-EAST = 2
-SOUTH = 3
+#WEST = 0
+#NORTH = 1
+#EAST = 2
+#SOUTH = 3
 
 def generate_next_tile(i,prev_dir,maze,maze_width,maze_height):
     go_to = 0
     maze[i][(prev_dir + 2) % 4] = 1
-    available = []
-    if((i%maze_width) + 1 < maze_width):
-        if(maze[i + 1] == [0,0,0,0]):
-            available.append((i + 1,EAST))
-            if(prev_dir != EAST):
-                available.append((i + 1,EAST))
-            else:
-                available.append((i + 1,EAST))
-                available.append((i + 1,EAST))
-    if((i%maze_width) - 1 >= 0):
-        if(maze[i - 1] == [0,0,0,0]):
-            available.append((i - 1,WEST))
-            if(prev_dir != WEST):
-                available.append((i - 1,WEST))
-            else:
-                available.append((i - 1,WEST))
-                available.append((i - 1,WEST))
-    if(i + maze_width < maze_width*maze_height):
-        if(maze[i + maze_width] == [0,0,0,0]):
-            available.append((i + maze_width,SOUTH))
-            if(prev_dir != SOUTH):
-                available.append((i + maze_width,SOUTH))
-    if(i - maze_width >= 0):
-        if(maze[i - maze_width] == [0,0,0,0]):
-            available.append((i - maze_width,NORTH))
-            if(prev_dir != NORTH):
-                available.append((i - maze_width,NORTH))
+    available = check_avaible(i, maze, maze_width, maze_height, True)
     if len(available) > 0:
         go_to, new_dir = available[randrange(len(available))]
         maze[i][new_dir] = 1
         generate_next_tile(go_to,new_dir,maze,maze_width,maze_height)
         generate_next_tile(i,prev_dir,maze,maze_width,maze_height)
 
+def check_avaible(i, maze, maze_width, maze_height, empty):
+    available = []
+    for j in range(4):
+        if(maze[i][j] == 0):
+            if(j % 2 == 0):
+                next_tile = i + j - 1 #j - 1 = -1 lub 1
+                if(i%maze_width + j - 1 >= 0 and i%maze_width + j - 1 < maze_width
+                    and (not empty or maze[next_tile] == [0,0,0,0]) and maze[next_tile] != 's'):
+                    for x in range(2):
+                        available.append((next_tile,j))
+            else:
+                next_tile = i + (j - 2)*maze_width #j - 2 = -1 lub 1
+                if(next_tile < maze_width*maze_height and next_tile >= 0
+                   and (not empty or maze[next_tile] == [0,0,0,0]) and maze[next_tile] != 's'):
+                    available.append((next_tile,j))
+    return available
+
 def make_loops(maze,maze_width,maze_height):
     for i in range(maze_width*maze_height//15):
         x = randrange(1,maze_width*maze_height)
-        available = []
-        for j in range(4):
-            if(maze[x][j] == 0):
-                if(j % 2 == 0):
-                    if((x%maze_width) + j - 1 >= 0 and (x%maze_width) + j - 1 < maze_width):
-                        available.append((x + j - 1,j))
-                elif(x + (j - 2)*maze_width < maze_width*maze_height and x + (j - 2)*maze_width >= 0):
-                    available.append((x + (j - 2)*maze_width,j))
+        available = check_avaible(x, maze, maze_width, maze_height, False)
         for z in available:
             if(random() >= 0.5):
                 maze[x][z[1]] = 1
                 maze[z[0]][(z[1] + 2) % 4] = 1
 
-
-
-        
-
 def generate_maze(maze_width,maze_height,loops: bool):
     maze = [[0,0,0,0] for i in range(maze_width*maze_height)]
     maze[0] = "s"
-    prev_dir = EAST
+    prev_dir = 2
     i = 1
     generate_next_tile(i,prev_dir,maze,maze_width,maze_height)
     if loops: make_loops(maze,maze_width,maze_height)
