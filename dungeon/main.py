@@ -1,3 +1,4 @@
+import asyncio
 import pgzrun
 from random import*
 
@@ -118,10 +119,10 @@ while x < len(lines):
     mazes.append((maze, maze_width, maze_height))
     x += 1
 
-maze_number = int(input("maze_number: "))
+maze_number = -1 #int(input("maze_number: "))
 if maze_number == -1:
-    maze_width = int(input("maze_width: "))
-    maze_height = int(input("maze_height: "))
+    maze_width = 10 #int(input("maze_width: "))
+    maze_height = 4 #int(input("maze_height: "))
     maze = generate_maze(maze_width,maze_height,True)
 else:
     maze = mazes[maze_number][0]
@@ -234,5 +235,8 @@ def update():
     player_move()
     build_room(room_number)
 
+async def main():
+    pgzrun.go()
+    await asyncio.sleep(0)
 
-pgzrun.go()
+asyncio.run(main())
