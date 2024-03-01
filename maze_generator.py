@@ -70,10 +70,8 @@ tuple("s"):"s",
 }
 
 def print_maze(maze, maze_width, maze_height):
-    print("")
     print("Width:", maze_width)
     print("Height:", maze_height)
-    print("Maze number:", len(mazes))
     for i in range(maze_height):
         for j in range(maze_width):
             print(symbols[tuple(maze[i*maze_width+j])], end=" ")
@@ -98,6 +96,7 @@ while(ans != -2):
     mazes = []
     for x in range(n):
         maze = generate_maze(maze_width,maze_height,True)
+        print("Maze number:", len(mazes))
         print_maze(maze, maze_width, maze_height)
         mazes.append(maze)
     while(ans != -1 and ans != -2):
