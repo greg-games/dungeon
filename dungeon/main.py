@@ -102,7 +102,7 @@ def print_maze(maze, maze_width, maze_height):
                 print(symbols[tuple(maze[(2*i+1)*maze_width+j])], end="")
         print("")
 
-file = open("labirynty.txt", "r", encoding="utf-8")
+file = open("dungeon\labirynty.txt", "r", encoding="utf-8")
 lines = file.readlines()
 x = 0
 mazes = []
