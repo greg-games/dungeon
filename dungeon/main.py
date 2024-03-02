@@ -131,6 +131,7 @@ else:
 print_maze(maze, maze_width, maze_height)
 
 maze[0] = [0,0,1,0]
+TITLE = "Greg Games - Dungeon"
 WIDTH = 840
 HEIGHT = 600
 all_sprites = []
