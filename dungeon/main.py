@@ -30,7 +30,7 @@ def check_avaible(i, maze, maze_width, maze_height, empty):
     return available
 
 def make_loops(maze,maze_width,maze_height):
-    for i in range(maze_width*maze_height//15):
+    for i in range(maze_width*maze_height//10):
         x = randrange(1,maze_width*maze_height)
         available = check_avaible(x, maze, maze_width, maze_height, False)
         for z in available:
@@ -119,10 +119,10 @@ while x < len(lines):
     mazes.append((maze, maze_width, maze_height))
     x += 1
 
-maze_number = -1 #int(input("maze_number: "))
+maze_number = 6 #int(input("maze_number: "))
 if maze_number == -1:
     maze_width = 10 #int(input("maze_width: "))
-    maze_height = 4 #int(input("maze_height: "))
+    maze_height = 5 #int(input("maze_height: "))
     maze = generate_maze(maze_width,maze_height,True)
 else:
     maze = mazes[maze_number][0]
@@ -138,7 +138,7 @@ room_number = 0
 
 player = Actor("alien")
 player.pos = WIDTH/2,HEIGHT - 120 - player.height/2
-PLAYER_SPEED = 10
+PLAYER_SPEED = 7.5
 player.speed = 0
 
 player_colliding = []
