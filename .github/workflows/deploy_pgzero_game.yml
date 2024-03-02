@@ -18,7 +18,7 @@ jobs:
             python -m pip install pygbag
             echo "Successfully installed pygbag"
             echo "Attempting to build the game"
-            python -m pygbag --build $GITHUB_WORKSPACE/dungeon/main.py
+            python -m pygbag --build $GITHUB_WORKSPACE/dungeon/main.py --app_name Dungeon
             echo "Successfully build the game and complied to WebAssembly"
 
     - name : "Upload to GitHub pages branch gh-pages"
