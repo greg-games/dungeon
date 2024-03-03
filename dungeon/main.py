@@ -246,9 +246,9 @@ def update():
     player_colide()
     player.speed = 0
     if keyboard.left:
-        player.speed = -1*PLAYER_SPEED
-    elif keyboard.right:
-        player.speed = PLAYER_SPEED
+        player.speed -= PLAYER_SPEED
+    if keyboard.right:
+        player.speed += PLAYER_SPEED
     player_move()
     build_room(room_number)
 
