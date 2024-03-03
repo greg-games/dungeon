@@ -130,12 +130,23 @@ else:
     maze_height = mazes[maze_number][2]
 print_maze(maze, maze_width, maze_height)
 
-maze[0] = [0,0,1,0]
 TITLE = "Greg Games - Dungeon"
 WIDTH = 840
 HEIGHT = 600
 all_sprites = []
 room_number = 0
+
+maze[0] = [(0,0,1,0),[("door",(WIDTH/2,HEIGHT - 120 - Actor("door").height/2))]]
+
+for i in range(len(maze)):
+    if(i > 0):
+        maze[i] = [tuple(maze[i]),[]]
+    for _ in range(3):
+        if(random() > 0.5):
+            x = WIDTH*(1 + 2*randint(0,1))/4
+            maze[i][1].append(("torch",(x,HEIGHT/2)))
+    
+    
 
 player = Actor("alien")
 player.pos = WIDTH/2,HEIGHT - 120 - player.height/2
@@ -158,13 +169,13 @@ def build_room(i):
                 all_sprites.append(brick)
             x = WIDTH/2 + brick.width/2
         y = HEIGHT - brick.height
-    if(maze[i][0] == 0):
+    if(maze[i][0][0] == 0):
         for j in range(3):
             brick = Actor("cegła")
             brick.pos = brick.width/2 , brick.height * (3/2 + j)
             brick.name = "brick"
             all_sprites.append(brick)
-    if(maze[i][1] == 0):
+    if(maze[i][0][1] == 0):
         brick = Actor("cegła")
         brick.pos = WIDTH/2, brick.height/2
         brick.name = "brick"
@@ -174,13 +185,13 @@ def build_room(i):
         ladder.pos = WIDTH/2, ladder.height/2
         ladder.name = "ladder"
         all_sprites.append(ladder)
-    if(maze[i][2] == 0):
+    if(maze[i][0][2] == 0):
         for j in range(3):
             brick = Actor("cegła")
             brick.pos = WIDTH - brick.width/2, brick.height * (3/2 + j)
             brick.name = "brick"
             all_sprites.append(brick)
-    if(maze[i][3] == 0):
+    if(maze[i][0][3] == 0):
         brick = Actor("cegła")
         brick.pos = WIDTH/2, HEIGHT - brick.height/2
         brick.name = "brick"
@@ -189,7 +200,12 @@ def build_room(i):
         ladder = Actor("drabina")
         ladder.pos = WIDTH/2, HEIGHT
         ladder.name = "ladder"
-        all_sprites.append(ladder)     
+        all_sprites.append(ladder)
+    for addon in maze[i][1]:
+        addon_sprite = Actor(addon[0])
+        addon_sprite.pos = addon[1]
+        addon_sprite.name = addon[0]
+        all_sprites.append(addon_sprite)   
 
 def player_colide():
     global player_colliding
@@ -206,18 +222,18 @@ def player_move():
     if "brick" in player_colliding:
         player.x -= player.speed
         player_colide()
-    elif(player.x < player.width/2 and maze[room_number][0] == 1):
+    elif(player.x < player.width/2 and maze[room_number][0][0] == 1):
             room_number -= 1
             player.x = WIDTH - player.width/2
-    elif(player.x > WIDTH - player.width/2 and maze[room_number][2] == 1):
+    elif(player.x > WIDTH - player.width/2 and maze[room_number][0][2] == 1):
             player.x = player.width/2
             room_number += 1
 
 def on_key_down():
     global room_number
-    if keyboard.up and "ladder" in player_colliding and maze[room_number][1] == 1:
+    if keyboard.up and "ladder" in player_colliding and maze[room_number][0][1] == 1:
         room_number -= maze_width
-    elif keyboard.down and "ladder" in player_colliding and maze[room_number][3] == 1:
+    elif keyboard.down and "ladder" in player_colliding and maze[room_number][0][3] == 1:
         room_number += maze_width
 
 def draw():
