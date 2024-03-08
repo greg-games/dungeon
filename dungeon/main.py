@@ -142,10 +142,9 @@ def iscolliding(object1,object2,distance):
             object1.top - distance < object2.bottom and 
             object1.bottom + distance > object2.top)
 
-
-def make_addons():
+def make_tiles():
     maze[0] = [(0,0,1,0),[("door",(WIDTH/2,HEIGHT - 120 - Actor("door").height/2))]]
-
+    
     all_addons = [ #(name, max number on screan, min distance, (x start, x end, y start, y end), ...)
         ("torch",2,100,(WIDTH/4,WIDTH*3/8,HEIGHT/2,HEIGHT/2), (WIDTH*5/8,WIDTH*3/4,HEIGHT/2,HEIGHT/2)),
         ("crack",5,20,(WIDTH/10,WIDTH*3/8,HEIGHT/10,HEIGHT/8),(WIDTH*5/8,WIDTH*9/10,HEIGHT/10,HEIGHT/8))
@@ -154,6 +153,30 @@ def make_addons():
     for i in range(len(maze)):
         if(i > 0):
             maze[i] = [tuple(maze[i]),[]]
+        y = 0
+        brick = Actor("brick")
+        ladder = Actor("ladder")
+        for _ in range(2):
+            x = 0
+            for _ in range(2):
+                for j in range(3):
+                    maze[i][1].append(("brick",(brick.width*(j + 1/2) + x, brick.height/2 + y)))
+                x = WIDTH/2 + brick.width/2
+            y = HEIGHT - brick.height
+        if(maze[i][0][0] == 0):
+            for j in range(3):
+                maze[i][1].append(("brick",(brick.width/2 , brick.height * (3/2 + j))))
+        if(maze[i][0][1] == 0):
+            maze[i][1].append(("brick",(WIDTH/2, brick.height/2)))
+        else:
+            maze[i][1].append(("ladder",(WIDTH/2, ladder.height/2)))
+        if(maze[i][0][2] == 0):
+            for j in range(3):
+                maze[i][1].append(("brick",(WIDTH - brick.width/2, brick.height * (3/2 + j))))
+        if(maze[i][0][3] == 0):
+            maze[i][1].append(("brick",(WIDTH/2, HEIGHT - brick.height/2)))
+        else:
+            maze[i][1].append(("ladder",(WIDTH/2, HEIGHT)))
         for addon in all_addons:
             for _ in range(addon[1]):
                 if(random() > 0.5):
@@ -171,7 +194,7 @@ def make_addons():
                     if pos_avaible:
                         maze[i][1].append((addon[0],pos))
     
-make_addons()    
+make_tiles()    
 
 player = Actor("alien")
 player.pos = WIDTH/2,HEIGHT - 120 - player.height/2
@@ -182,55 +205,12 @@ player_colliding = []
 
 def build_room(i):
     global all_sprites
-    all_sprites = [] 
-    y = 0
-    for _ in range(2):
-        x = 0
-        for _ in range(2):
-            for j in range(3):
-                brick = Actor("cegła")
-                brick.pos = brick.width*(j + 1/2) + x, brick.height/2 + y
-                brick.name = "brick"
-                all_sprites.append(brick)
-            x = WIDTH/2 + brick.width/2
-        y = HEIGHT - brick.height
-    if(maze[i][0][0] == 0):
-        for j in range(3):
-            brick = Actor("cegła")
-            brick.pos = brick.width/2 , brick.height * (3/2 + j)
-            brick.name = "brick"
-            all_sprites.append(brick)
-    if(maze[i][0][1] == 0):
-        brick = Actor("cegła")
-        brick.pos = WIDTH/2, brick.height/2
-        brick.name = "brick"
-        all_sprites.append(brick)
-    else:
-        ladder = Actor("drabina")
-        ladder.pos = WIDTH/2, ladder.height/2
-        ladder.name = "ladder"
-        all_sprites.append(ladder)
-    if(maze[i][0][2] == 0):
-        for j in range(3):
-            brick = Actor("cegła")
-            brick.pos = WIDTH - brick.width/2, brick.height * (3/2 + j)
-            brick.name = "brick"
-            all_sprites.append(brick)
-    if(maze[i][0][3] == 0):
-        brick = Actor("cegła")
-        brick.pos = WIDTH/2, HEIGHT - brick.height/2
-        brick.name = "brick"
-        all_sprites.append(brick)
-    else:
-        ladder = Actor("drabina")
-        ladder.pos = WIDTH/2, HEIGHT
-        ladder.name = "ladder"
-        all_sprites.append(ladder)
-    for addon in maze[i][1]:
-        addon_sprite = Actor(addon[0])
-        addon_sprite.pos = addon[1]
-        addon_sprite.name = addon[0]
-        all_sprites.append(addon_sprite)   
+    all_sprites = []
+    for tile in maze[i][1]:
+        tile_sprite = Actor(tile[0])
+        tile_sprite.pos = tile[1]
+        tile_sprite.name = tile[0]
+        all_sprites.append(tile_sprite)   
 
 def player_colide():
     global player_colliding
