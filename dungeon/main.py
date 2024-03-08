@@ -119,7 +119,7 @@ while x < len(lines):
     mazes.append((maze, maze_width, maze_height))
     x += 1
 
-maze_number = 6 #int(input("maze_number: "))
+maze_number = 0 #int(input("maze_number: "))
 if maze_number == -1:
     maze_width = 10 #int(input("maze_width: "))
     maze_height = 5 #int(input("maze_height: "))
@@ -136,17 +136,42 @@ HEIGHT = 600
 all_sprites = []
 room_number = 0
 
-maze[0] = [(0,0,1,0),[("door",(WIDTH/2,HEIGHT - 120 - Actor("door").height/2))]]
+def iscolliding(object1,object2,distance):
+    return (object1.right + distance > object2.left and 
+            object1.left - distance < object2.right and 
+            object1.top - distance < object2.bottom and 
+            object1.bottom + distance > object2.top)
 
-for i in range(len(maze)):
-    if(i > 0):
-        maze[i] = [tuple(maze[i]),[]]
-    for _ in range(3):
-        if(random() > 0.5):
-            x = WIDTH*(1 + 2*randint(0,1))/4
-            maze[i][1].append(("torch",(x,HEIGHT/2)))
+
+def make_addons():
+    maze[0] = [(0,0,1,0),[("door",(WIDTH/2,HEIGHT - 120 - Actor("door").height/2))]]
+
+    all_addons = [ #(name, max number on screan, min distance, (x start, x end, y start, y end), ...)
+        ("torch",2,100,(WIDTH/4,WIDTH*3/8,HEIGHT/2,HEIGHT/2), (WIDTH*5/8,WIDTH*3/4,HEIGHT/2,HEIGHT/2)),
+        ("crack",5,20,(WIDTH/10,WIDTH*3/8,HEIGHT/10,HEIGHT/8),(WIDTH*5/8,WIDTH*9/10,HEIGHT/10,HEIGHT/8))
+    ]
+
+    for i in range(len(maze)):
+        if(i > 0):
+            maze[i] = [tuple(maze[i]),[]]
+        for addon in all_addons:
+            for _ in range(addon[1]):
+                if(random() > 0.5):
+                    pos_avaible = False
+                    counter = 0
+                    while not (pos_avaible or counter > 100):
+                        pos = addon[randrange(3,len(addon))]
+                        pos = (randint(pos[0],pos[1]),randint(pos[2],pos[3]))
+                        pos_avaible = True
+                        for addon2 in maze[i][1]:
+                            if(iscolliding(Actor(addon[0],pos),Actor(addon2[0],addon2[1]),addon[2])):
+                                pos_avaible = False
+                                break
+                        counter += 1
+                    if pos_avaible:
+                        maze[i][1].append((addon[0],pos))
     
-    
+make_addons()    
 
 player = Actor("alien")
 player.pos = WIDTH/2,HEIGHT - 120 - player.height/2
@@ -211,7 +236,7 @@ def player_colide():
     global player_colliding
     player_colliding = []
     for sprite in all_sprites:
-        if(player.right > sprite.left and player.left < sprite.right and player.top < sprite.bottom and player.bottom > sprite.top):
+        if(iscolliding(player,sprite,0)):
             player_colliding.append(sprite.name)
 
 def player_move():
