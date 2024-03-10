@@ -133,6 +133,14 @@ print_maze(maze, maze_width, maze_height)
 TITLE = "Greg Games - Dungeon"
 WIDTH = 840
 HEIGHT = 600
+
+player = Actor("alien")
+player.pos = WIDTH/2,HEIGHT - 120 - player.height/2
+PLAYER_SPEED = 7.5
+player.speed = 0
+
+player_colliding = []
+
 all_sprites = []
 room_number = 0
 
@@ -144,71 +152,84 @@ def iscolliding(object1,object2,distance):
 
 def make_tiles():
     maze[0] = [(0,0,1,0),[]]
-    
-    all_addons = [ #(name, number of variants, max number on screan, min distance, (x start, x end, y start, y end), ...)
-        ("torch",0,2,100,(WIDTH/4,WIDTH*3/4,HEIGHT/2,HEIGHT/2)),
-        ("crack",0,5,20,(WIDTH/10,WIDTH*9/10,HEIGHT/10,HEIGHT/8),(WIDTH/10,WIDTH*9/10,HEIGHT*7/8,HEIGHT*9/10))
-    ]
-
     for i in range(len(maze)):
         if(i > 0):
             maze[i] = [tuple(maze[i]),[]]
-        brick = Actor("brick0")
-        ladder = Actor("ladder0")
-        for x in range(7):
-            for y in range(5):
-                maze[i][1].append(("brick_background",0,(brick.width*(x + 1/2), brick.height*(y + 1/2))))
-        y = 0
+        make_room_frame(i)
+        make_addons(i)
+
+def make_room_frame(i):
+    brick = Actor("brick0")
+    ladder = Actor("ladder0")
+    for x in range(5):
+        for y in range(3):
+            maze[i][1].append(("background",0,(brick.width*(x + 3/2), brick.height*(y + 3/2))))
+    y = 0
+    for _ in range(2):
+        x = 0
         for _ in range(2):
-            x = 0
-            for _ in range(2):
-                for j in range(3):
-                    maze[i][1].append(("brick",randint(0,7),(brick.width*(j + 1/2) + x, brick.height/2 + y)))
-                x = WIDTH/2 + brick.width/2
-            y = HEIGHT - brick.height
-        if(maze[i][0][0] == 0):
             for j in range(3):
-                maze[i][1].append(("brick",randint(0,7),(brick.width/2 , brick.height * (3/2 + j))))
-        if(maze[i][0][1] == 0):
-            maze[i][1].append(("brick",randint(0,7),(WIDTH/2, brick.height/2)))
-        else:
-            maze[i][1].append(("ladder",0,(WIDTH/2, ladder.height/2)))
-        if(maze[i][0][2] == 0):
-            for j in range(3):
-                maze[i][1].append(("brick",randint(0,7),(WIDTH - brick.width/2, brick.height * (3/2 + j))))
-        if(maze[i][0][3] == 0):
-            maze[i][1].append(("brick",randint(0,7),(WIDTH/2, HEIGHT - brick.height/2)))
-        else:
-            maze[i][1].append(("ladder",0,(WIDTH/2, HEIGHT)))
-        if(i == 0):
-            maze[i][1].append(("door",0,(WIDTH/2,HEIGHT - 120 - Actor("door0").height/2)))
-        for addon in all_addons:
-            for _ in range(addon[2]):
-                if(random() > 0.5):
-                    pos_avaible = False
-                    counter = 0
-                    variant = randint(0,addon[1])
-                    while not (pos_avaible or counter > 10):
-                        pos = addon[randrange(4,len(addon))]
-                        pos = (randint(pos[0],pos[1]),randint(pos[2],pos[3]))
-                        pos_avaible = True
-                        for addon2 in maze[i][1]:
-                            if(addon2[0] != "brick" and addon2[0] != "brick_background" and
-                            iscolliding(Actor(addon[0]+str(addon[1]),pos),Actor(addon2[0]+str(addon2[1]),addon2[2]),addon[3])):
-                                pos_avaible = False
-                                break
-                        counter += 1
-                    if pos_avaible:
-                        maze[i][1].append((addon[0],variant,pos))
+                maze[i][1].append(("brick",randint(0,7),(brick.width*(j + 1/2) + x, brick.height/2 + y)))
+            x = WIDTH/2 + brick.width/2
+        y = HEIGHT - brick.height
+    if(maze[i][0][0] == 0):
+        name, variant = "brick", randint(0,7)
+    else:
+        name, variant = "background", 0
+    for j in range(3):
+        maze[i][1].append((name,variant,(brick.width/2 , brick.height * (3/2 + j))))
+    
+    if(maze[i][0][1] == 0):
+        maze[i][1].append(("brick",randint(0,7),(WIDTH/2, brick.height/2)))
+    else:
+        maze[i][1].append(("background",0,(WIDTH/2, brick.height/2)))
+        maze[i][1].append(("ladder",0,(WIDTH/2, ladder.height/2)))
+    
+    if(maze[i][0][2] == 0):
+        name, variant = "brick", randint(0,7)
+    else:
+        name, variant = "background", 0
+    for j in range(3):
+        maze[i][1].append((name, variant,(WIDTH - brick.width/2, brick.height * (3/2 + j))))
+    
+    if(maze[i][0][3] == 0):
+        maze[i][1].append(("brick",randint(0,7),(WIDTH/2, HEIGHT - brick.height/2)))
+    else:
+        maze[i][1].append(("background",0,(WIDTH/2, HEIGHT - brick.height/2)))
+        maze[i][1].append(("ladder",0,(WIDTH/2, HEIGHT)))
+
+def make_addons(i):
+    crack = Actor("crack0")
+    all_addons = [ #(name, number of variants, max number on screan, min distance, can_collide, (x start, x end, y start, y end), ...)
+        ("torch",0,2,200,("background"),(WIDTH/10,WIDTH*9/10,HEIGHT/2,HEIGHT/2)),
+        ("crack",0,3,100,("background"),(crack.width/2,WIDTH - crack.width/2,HEIGHT/10,HEIGHT*7/8)),
+        ("crack",0,3,100,("brick"),(crack.width/2,WIDTH - crack.width/2,HEIGHT/10,HEIGHT*7/8))#,(WIDTH/10,WIDTH*9/10,HEIGHT/10,HEIGHT/8),(WIDTH/10,WIDTH*9/10,HEIGHT*7/8,HEIGHT*9/10))
+    ]
+    if(i == 0):
+        maze[i][1].append(("door",0,(WIDTH/2,HEIGHT - 120 - Actor("door0").height/2)))
+    for addon in all_addons:
+        for _ in range(addon[2]):
+            if(random() > 0.5):
+                pos_avaible = False
+                counter = 0
+                variant = randint(0,addon[1])
+                while not (pos_avaible or counter > 20):
+                    pos = addon[randrange(5,len(addon))]
+                    pos = (randint(pos[0],pos[1]),randint(pos[2],pos[3]))
+                    pos_avaible = True
+                    for tile in maze[i][1]:
+                        distance = 0
+                        if(tile[0] == addon[0]):
+                            distance = addon[3]
+                        if(not tile[0] in addon[4] and
+                               iscolliding(Actor(addon[0]+str(addon[1]),pos),Actor(tile[0]+str(tile[1]),tile[2]),distance)): 
+                            pos_avaible = False
+                            break
+                    counter += 1
+                if pos_avaible:
+                    maze[i][1].append((addon[0],variant,pos))
     
 make_tiles()    
-
-player = Actor("alien")
-player.pos = WIDTH/2,HEIGHT - 120 - player.height/2
-PLAYER_SPEED = 7.5
-player.speed = 0
-
-player_colliding = []
 
 def build_room(i):
     global all_sprites
