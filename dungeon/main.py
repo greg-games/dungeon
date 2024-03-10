@@ -119,7 +119,7 @@ while x < len(lines):
     mazes.append((maze, maze_width, maze_height))
     x += 1
 
-maze_number = 1 #int(input("maze_number: "))
+maze_number = 7 #int(input("maze_number: "))
 if maze_number == -1:
     maze_width = 10 #int(input("maze_width: "))
     maze_height = 5 #int(input("maze_height: "))
@@ -172,9 +172,15 @@ class Tile:
         return self.name+str(self.variant)
 
 class Chest(Tile):
-    def __init__(self, name:str, variant:int, pos:tuple, is_open:bool):
+    def __init__(self, name:str, variant:int, x:int, is_open:bool):
         self.is_open = is_open
-        super().__init__(name, variant, pos)
+        self.bottom = HEIGHT - Actor("brick0").height
+        self.frame = 0
+        super().__init__(name, variant, (x,self.bottom + Actor("chest0/0").height/2))
+    def image(self):
+        return self.name+str(self.variant)+"/"+str(self.frame)
+    
+    
 
 class Addon:
     def __init__(self, name:str, number_of_variants:int, max_number_on_screan:int,min_distance:int, 
@@ -255,7 +261,7 @@ def make_addons(i):
             x = WIDTH/4
         elif(maze[i].west == 1):
             x = WIDTH*3/4
-        maze[i].tiles.append(Chest("chest",0,(x,HEIGHT - 120 - Actor("chest0").height/2),False))
+        maze[i].tiles.append(Chest("chest",0,x,False))
     for addon in all_addons:
         for _ in range(addon.max_number_on_screan):
             if(random() > 0.5):
@@ -285,6 +291,8 @@ def build_room(i):
     for tile in maze[i].tiles:
         tile_sprite = Actor(tile.image())
         tile_sprite.pos = tile.pos
+        if isinstance(tile,Chest):
+            tile_sprite.bottom = tile.bottom
         tile_sprite.name = tile.name
         all_sprites.append(tile_sprite)   
 
@@ -306,17 +314,36 @@ def player_move():
     elif(player.x < player.width/2 and maze[room_number].west == 1):
             room_number -= 1
             player.x = WIDTH - player.width/2
+            build_room(room_number)
     elif(player.x > WIDTH - player.width/2 and maze[room_number].east == 1):
             player.x = player.width/2
             room_number += 1
+            build_room(room_number)
+
+def animate_chests():
+    chests = [tile for tile in maze[room_number].tiles if isinstance(tile,Chest)]
+    for chest in chests:
+        if chest.is_open and chest.frame < 6:
+            chest.frame += 1
+            build_room(room_number)
 
 def on_key_down():
     global room_number
-    if keyboard.up and "ladder" in player_colliding and maze[room_number].north == 1:
+    if(keyboard.up and "ladder" in player_colliding and maze[room_number].north == 1):
         room_number -= maze_width
-    elif keyboard.down and "ladder" in player_colliding and maze[room_number].south == 1:
+        build_room(room_number)
+    elif(keyboard.down and "ladder" in player_colliding and maze[room_number].south == 1):
         room_number += maze_width
+        build_room(room_number)
 
+def on_mouse_down():
+    chests = [tile for tile in maze[room_number].tiles if isinstance(tile,Chest)]
+    if(mouse.LEFT and any(chests)):
+        for chest in chests:
+            if iscolliding(player,Actor(chest.image(),chest.pos),150):
+                chest.is_open = True
+
+build_room(room_number)
 def draw():
     screen.clear()
     for sprite in all_sprites:
@@ -331,7 +358,7 @@ def update():
     if keyboard.right:
         player.speed += PLAYER_SPEED
     player_move()
-    build_room(room_number)
+    animate_chests()   
 
 async def main():
     pgzrun.go()
