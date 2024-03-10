@@ -150,6 +150,31 @@ def iscolliding(object1,object2,distance):
             object1.top - distance < object2.bottom and 
             object1.bottom + distance > object2.top)
 
+class Tile:
+    def __init__(self, name, variant, pos):
+        self.name = name
+        self.variant = variant
+        self.pos = pos
+    
+    def image(self):
+        return self.name+str(self.variant)
+
+class Addon:
+    def __init__(self, name, number_of_variants, max_number_on_screan,
+                 min_distance, can_collide,x_start, x_end, y_start, y_end):
+        self.name = name
+        self.number_of_variants = number_of_variants
+        self.max_number_on_screan = max_number_on_screan
+        self.min_distance = min_distance
+        self.can_collide = can_collide
+        self.x_start = x_start
+        self.x_end = x_end
+        self.y_start = y_start
+        self.y_end = y_end
+
+    def image(self,variant):
+        return self.name+str(variant)   
+
 def make_tiles():
     maze[0] = [(0,0,1,0),[]]
     for i in range(len(maze)):
@@ -163,13 +188,13 @@ def make_room_frame(i):
     ladder = Actor("ladder0")
     for x in range(5):
         for y in range(3):
-            maze[i][1].append(("background",0,(brick.width*(x + 3/2), brick.height*(y + 3/2))))
+            maze[i][1].append(Tile("background",0,(brick.width*(x + 3/2), brick.height*(y + 3/2))))
     y = 0
     for _ in range(2):
         x = 0
         for _ in range(2):
             for j in range(3):
-                maze[i][1].append(("brick",randint(0,7),(brick.width*(j + 1/2) + x, brick.height/2 + y)))
+                maze[i][1].append(Tile("brick",randint(0,7),(brick.width*(j + 1/2) + x, brick.height/2 + y)))
             x = WIDTH/2 + brick.width/2
         y = HEIGHT - brick.height
     if(maze[i][0][0] == 0):
@@ -177,57 +202,56 @@ def make_room_frame(i):
     else:
         name, variant = "background", 0
     for j in range(3):
-        maze[i][1].append((name,variant,(brick.width/2 , brick.height * (3/2 + j))))
+        maze[i][1].append(Tile(name,variant,(brick.width/2 , brick.height * (3/2 + j))))
     
     if(maze[i][0][1] == 0):
-        maze[i][1].append(("brick",randint(0,7),(WIDTH/2, brick.height/2)))
+        maze[i][1].append(Tile("brick",randint(0,7),(WIDTH/2, brick.height/2)))
     else:
-        maze[i][1].append(("background",0,(WIDTH/2, brick.height/2)))
-        maze[i][1].append(("ladder",0,(WIDTH/2, ladder.height/2)))
+        maze[i][1].append(Tile("background",0,(WIDTH/2, brick.height/2)))
+        maze[i][1].append(Tile("ladder",0,(WIDTH/2, ladder.height/2)))
     
     if(maze[i][0][2] == 0):
         name, variant = "brick", randint(0,7)
     else:
         name, variant = "background", 0
     for j in range(3):
-        maze[i][1].append((name, variant,(WIDTH - brick.width/2, brick.height * (3/2 + j))))
+        maze[i][1].append(Tile(name, variant,(WIDTH - brick.width/2, brick.height * (3/2 + j))))
     
     if(maze[i][0][3] == 0):
-        maze[i][1].append(("brick",randint(0,7),(WIDTH/2, HEIGHT - brick.height/2)))
+        maze[i][1].append(Tile("brick",randint(0,7),(WIDTH/2, HEIGHT - brick.height/2)))
     else:
-        maze[i][1].append(("background",0,(WIDTH/2, HEIGHT - brick.height/2)))
-        maze[i][1].append(("ladder",0,(WIDTH/2, HEIGHT)))
+        maze[i][1].append(Tile("background",0,(WIDTH/2, HEIGHT - brick.height/2)))
+        maze[i][1].append(Tile("ladder",0,(WIDTH/2, HEIGHT)))
 
 def make_addons(i):
     crack = Actor("crack0")
     all_addons = [ #(name, number of variants, max number on screan, min distance, can_collide, (x start, x end, y start, y end), ...)
-        ("torch",0,2,200,("background"),(WIDTH/10,WIDTH*9/10,HEIGHT/2,HEIGHT/2)),
-        ("crack",0,3,100,("background"),(crack.width/2,WIDTH - crack.width/2,HEIGHT/10,HEIGHT*7/8)),
-        ("crack",0,3,100,("brick"),(crack.width/2,WIDTH - crack.width/2,HEIGHT/10,HEIGHT*7/8))#,(WIDTH/10,WIDTH*9/10,HEIGHT/10,HEIGHT/8),(WIDTH/10,WIDTH*9/10,HEIGHT*7/8,HEIGHT*9/10))
+        Addon("torch",0,2,200,("background"),WIDTH/10, WIDTH*9/10, HEIGHT/2, HEIGHT/2),
+        Addon("crack",0,3,100,("background"),crack.width/2, WIDTH - crack.width/2, HEIGHT/10, HEIGHT*7/8),
+        Addon("crack",0,3,100,("brick"),crack.width/2, WIDTH - crack.width/2, HEIGHT/10, HEIGHT*7/8)
     ]
     if(i == 0):
-        maze[i][1].append(("door",0,(WIDTH/2,HEIGHT - 120 - Actor("door0").height/2)))
+        maze[i][1].append(Tile("door",0,(WIDTH/2,HEIGHT - 120 - Actor("door0").height/2)))
     for addon in all_addons:
-        for _ in range(addon[2]):
+        for _ in range(addon.max_number_on_screan):
             if(random() > 0.5):
                 pos_avaible = False
                 counter = 0
-                variant = randint(0,addon[1])
+                variant = randint(0,addon.number_of_variants)
                 while not (pos_avaible or counter > 20):
-                    pos = addon[randrange(5,len(addon))]
-                    pos = (randint(pos[0],pos[1]),randint(pos[2],pos[3]))
+                    pos = (randint(addon.x_start,addon.x_end),randint(addon.y_start,addon.y_end))
                     pos_avaible = True
                     for tile in maze[i][1]:
                         distance = 0
-                        if(tile[0] == addon[0]):
-                            distance = addon[3]
-                        if(not tile[0] in addon[4] and
-                               iscolliding(Actor(addon[0]+str(addon[1]),pos),Actor(tile[0]+str(tile[1]),tile[2]),distance)): 
+                        if(tile.name == addon.name):
+                            distance = addon.min_distance
+                        if(not tile.name in addon.can_collide and
+                               iscolliding(Actor(addon.image(variant),pos),Actor(tile.image(),tile.pos),distance)): 
                             pos_avaible = False
                             break
                     counter += 1
                 if pos_avaible:
-                    maze[i][1].append((addon[0],variant,pos))
+                    maze[i][1].append(Tile(addon.name,variant,pos))
     
 make_tiles()    
 
@@ -235,9 +259,9 @@ def build_room(i):
     global all_sprites
     all_sprites = []
     for tile in maze[i][1]:
-        tile_sprite = Actor(tile[0]+str(tile[1]))
-        tile_sprite.pos = tile[2]
-        tile_sprite.name = tile[0]
+        tile_sprite = Actor(tile.image())
+        tile_sprite.pos = tile.pos
+        tile_sprite.name = tile.name
         all_sprites.append(tile_sprite)   
 
 def player_colide():
