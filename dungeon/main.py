@@ -2,6 +2,11 @@ import asyncio
 import pgzrun
 from random import*
 
+WEST = 0
+NORTH = 1
+EAST = 2
+SOUTH = 3
+
 def generate_next_tile(i,prev_dir,maze,maze_width,maze_height):
     go_to = 0
     maze[i][(prev_dir + 2) % 4] = 1
@@ -119,7 +124,7 @@ while x < len(lines):
     mazes.append((maze, maze_width, maze_height))
     x += 1
 
-maze_number = 7 #int(input("maze_number: "))
+maze_number = -1 #int(input("maze_number: "))
 if maze_number == -1:
     maze_width = 10 #int(input("maze_width: "))
     maze_height = 5 #int(input("maze_height: "))
@@ -129,6 +134,27 @@ else:
     maze_width = mazes[maze_number][1]
     maze_height = mazes[maze_number][2]
 print_maze(maze, maze_width, maze_height)
+
+def generate_maze_distance(maze_width):
+    maze[0] = (0,0,1,0)
+    maze_distance = [-1 for x in range(len(maze))]
+    next_tile = [(0,0)]
+    while(len(next_tile) > 0):
+        current_tile = next_tile.pop(0)
+        i, d = current_tile[0], current_tile[1]
+        if(maze_distance[i] == -1):
+            maze_distance[i] = d
+            for j in range(4):
+                if(maze[i][j] == 1):
+                    if(j%2 == 0):
+                        next_tile.append((i+j-1,d+1))
+                    else:
+                        next_tile.append((i+(j-2)*maze_width,d+1))
+    return maze_distance
+    
+
+
+maze_distance = generate_maze_distance(maze_width)
 
 TITLE = "Greg Games - Dungeon"
 WIDTH = 840
@@ -153,12 +179,13 @@ def iscolliding(object1,object2,distance):
             object1.bottom + distance > object2.top)
 
 class Room:
-    def __init__(self, exits:tuple, tiles:list):
+    def __init__(self, exits:tuple,distance:int, tiles:list):
         self.exits = exits
         self.west = exits[0]
         self.north = exits[1]
         self.east = exits[2]
         self.south = exits[3]
+        self.distance = distance
         self.tiles = tiles
 
     def no_of_exits(self):
@@ -205,10 +232,10 @@ class Addon:
         return self.name+"/"+str(variant)   
 
 def make_tiles():
-    maze[0] = Room((0,0,1,0),[])
+    maze[0] = Room((0,0,1,0),0,[])
     for i in range(len(maze)):
         if(i > 0):
-            maze[i] = Room(tuple(maze[i]),[])
+            maze[i] = Room(tuple(maze[i]),maze_distance[i],[])
         make_room_frame(i)
         make_addons(i)
 
@@ -286,12 +313,15 @@ def make_addons(i):
                     maze[i].tiles.append(Tile(addon.name,variant,pos))
     
     if(maze[i].no_of_exits() == 1):
+        chest_type = 0
+        for j in range(1,4):
+            if(maze[i].distance > j*7): chest_type += 1
         x = WIDTH*(randint(0,1)*2+1)/4
         if(maze[i].east == 1):
             x = WIDTH/4
         elif(maze[i].west == 1):
             x = WIDTH*3/4
-        maze[i].tiles.append(Chest("chest",randrange(4),x,False))
+        maze[i].tiles.append(Chest("chest",chest_type,x,False))
 
 make_tiles()    
 
