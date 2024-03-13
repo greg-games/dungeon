@@ -129,7 +129,7 @@ if maze_number == -1:
     maze_width = 10 #int(input("maze_width: "))
     maze_height = 5 #int(input("maze_height: "))
     maze = generate_maze(maze_width,maze_height,True)
-else:
+else: 
     maze = mazes[maze_number][0]
     maze_width = mazes[maze_number][1]
     maze_height = mazes[maze_number][2]
@@ -140,8 +140,7 @@ def generate_maze_distance(maze_width):
     maze_distance = [-1 for x in range(len(maze))]
     next_tile = [(0,0)]
     while(len(next_tile) > 0):
-        current_tile = next_tile.pop(0)
-        i, d = current_tile[0], current_tile[1]
+        i, d = next_tile.pop(0)
         if(maze_distance[i] == -1):
             maze_distance[i] = d
             for j in range(4):
@@ -152,9 +151,17 @@ def generate_maze_distance(maze_width):
                         next_tile.append((i+(j-2)*maze_width,d+1))
     return maze_distance
     
-
+def print_distance(distance_list):
+    for i in range(maze_height):
+        for j in range(maze_width):
+            #print(symbols[tuple(maze[i*maze_width+j])], end=" ")
+            if(len(str(distance_list[i*maze_width+j])) < 2):
+                print("0", end = "")
+            print(distance_list[i*maze_width+j], end="  ")
+        print("")
 
 maze_distance = generate_maze_distance(maze_width)
+print_distance(maze_distance)
 
 TITLE = "Greg Games - Dungeon"
 WIDTH = 840
@@ -169,6 +176,10 @@ player_colliding = []
 
 all_sprites = []
 room_number = 0
+number_of_chests = 0
+number_of_found_chests = 0
+chest_icon = Actor("chest icon")
+chest_icon.pos = (chest_icon.width,chest_icon.height)
 
 NO_VARIANT = -1
 
@@ -187,6 +198,7 @@ class Room:
         self.south = exits[3]
         self.distance = distance
         self.tiles = tiles
+        self.is_chest_near = False
 
     def no_of_exits(self):
         return sum(self.exits)
@@ -196,7 +208,6 @@ class Tile:
         self.name = name
         self.variant = variant
         self.pos = pos
-    
     def image(self):
         if self.variant == NO_VARIANT:
             return self.name
@@ -238,6 +249,8 @@ def make_tiles():
             maze[i] = Room(tuple(maze[i]),maze_distance[i],[])
         make_room_frame(i)
         make_addons(i)
+        make_chests(i)
+    add_more_chests()
 
 def make_room_frame(i):
     brick = Actor("brick/0")
@@ -311,8 +324,10 @@ def make_addons(i):
                     counter += 1
                 if pos_avaible:
                     maze[i].tiles.append(Tile(addon.name,variant,pos))
-    
-    if(maze[i].no_of_exits() == 1):
+
+def make_chests(i):
+    global number_of_chests
+    if(maze[i].no_of_exits() == 1 and i != 0):
         chest_type = 0
         for j in range(1,4):
             if(maze[i].distance > j*7): chest_type += 1
@@ -322,8 +337,50 @@ def make_addons(i):
         elif(maze[i].west == 1):
             x = WIDTH*3/4
         maze[i].tiles.append(Chest("chest",chest_type,x,False))
+        number_of_chests += 1
+    
 
-make_tiles()    
+
+def add_more_chests():
+    global number_of_chests
+    for i in range(len(maze)):
+        for tile in maze[i].tiles:
+            if isinstance(tile,Chest):
+                tiles_in_range(i,3)
+                break
+    print("")
+    for i in range(len(maze)):
+        if(maze[i].distance > 7 and 
+           not maze[i].is_chest_near and
+           maze[i].distance*2 < randrange(maze_width*maze_height)):
+            chest_type = 0
+            for j in range(1,4):
+                if(maze[i].distance > j*7): chest_type += 1
+            x = WIDTH*(randint(0,1)*2+1)/4
+            if(maze[i].north != 1 and maze[i].south != 1):
+                x = WIDTH/2
+            if(chest_type > 0): chest_type -= 1
+            maze[i].tiles.append(Chest("chest",chest_type,x,False))
+            number_of_chests += 1
+            tiles_in_range(i,3)
+    print(number_of_chests)
+
+
+def tiles_in_range(i,distance):
+    tiles = [-1 for x in range(len(maze))]
+    next_tile = [(i,0)]
+    while(len(next_tile) > 0):
+        j, d = next_tile.pop(0)
+        if(tiles[j] == -1 and d <= distance):
+            maze[j].is_chest_near = True
+            for k in range(4):
+                if(maze[j].exits[k] == 1):
+                    if(k%2 == 0):
+                        next_tile.append((j+k-1,d+1))
+                    else:
+                        next_tile.append((j+(k-2)*maze_width,d+1))
+
+make_tiles()   
 
 def build_room(i):
     global all_sprites
@@ -377,11 +434,16 @@ def on_key_down():
         build_room(room_number)
 
 def on_mouse_down():
+    global number_of_found_chests
     chests = [tile for tile in maze[room_number].tiles if isinstance(tile,Chest)]
     if(mouse.LEFT and any(chests)):
         for chest in chests:
-            if iscolliding(player,Actor(chest.image(),chest.pos),150):
+            if(iscolliding(player,Actor(chest.image(),chest.pos),150) and
+               not chest.is_open):
                 chest.is_open = True
+                number_of_found_chests += 1
+                print("You found: ", number_of_found_chests, "/", number_of_chests, " chests.")
+
 
 build_room(room_number)
 def draw():
@@ -389,6 +451,8 @@ def draw():
     for sprite in all_sprites:
         sprite.draw()
     player.draw()
+    chest_icon.draw()
+    screen.draw.text(str(number_of_found_chests) + "/" + str(number_of_chests), center = chest_icon.pos, color="yellow", fontsize=50)
 
 def update():
     player_colide()
