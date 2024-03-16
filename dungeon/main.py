@@ -1,4 +1,5 @@
 #!pgzrun
+import sys
 import asyncio
 import pgzrun
 
@@ -299,8 +300,11 @@ def update():
         player_colide()
         animate_chests()   
 
-async def main():
+if sys.platform != "emscripten":
     pgzrun.go()
-    await asyncio.sleep(0)
 
-asyncio.run(main())
+# async def main():
+#     pgzrun.go()
+#     await asyncio.sleep(0)
+
+# asyncio.run(main())
