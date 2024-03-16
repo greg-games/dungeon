@@ -1,0 +1,10 @@
+NO_VARIANT = -1
+
+WEST = 0
+NORTH = 1
+EAST = 2
+SOUTH = 3
+
+TITLE = "Greg Games - Dungeon"
+WIDTH = 840
+HEIGHT = 600
