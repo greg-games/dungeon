@@ -6,5 +6,5 @@ EAST = 2
 SOUTH = 3
 
 TITLE = "Greg Games - Dungeon"
-WIDTH = 840
-HEIGHT = 600
+WIDTH = 9*120
+HEIGHT = 5*120

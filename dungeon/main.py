@@ -107,14 +107,14 @@ def make_tiles():
 def make_room_frame(i):
     brick = Actor("brick/0")
     ladder = Actor("ladder")
-    for x in range(5):
-        for y in range(3):
+    for x in range(WIDTH//brick.width - 2):
+        for y in range(HEIGHT//brick.height - 2):
             maze.rooms[i].tiles.append(Tile("background",NO_VARIANT,(brick.width*(x + 3/2), brick.height*(y + 3/2))))
     y = 0
     for _ in range(2):
         x = 0
         for _ in range(2):
-            for j in range(3):
+            for j in range((WIDTH - 1)//(2*brick.width)):
                 maze.rooms[i].tiles.append(Tile("brick",randint(0,7),(brick.width*(j + 1/2) + x, brick.height/2 + y)))
             x = WIDTH/2 + brick.width/2
         y = HEIGHT - brick.height
@@ -122,7 +122,7 @@ def make_room_frame(i):
         name, variant = "brick", randint(0,7)
     else:
         name, variant = "background", NO_VARIANT
-    for j in range(3):
+    for j in range(HEIGHT//brick.height - 2):
         maze.rooms[i].tiles.append(Tile(name,variant,(brick.width/2 , brick.height * (3/2 + j))))
     
     if(maze.rooms[i].north() == 0):
@@ -135,7 +135,7 @@ def make_room_frame(i):
         name, variant = "brick", randint(0,7)
     else:
         name, variant = "background", NO_VARIANT
-    for j in range(3):
+    for j in range(HEIGHT//brick.height - 2):
         maze.rooms[i].tiles.append(Tile(name, variant,(WIDTH - brick.width/2, brick.height * (3/2 + j))))
     
     if(maze.rooms[i].south() == 0):
