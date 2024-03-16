@@ -14,7 +14,7 @@ game_ended = False
 
 player = Actor("alien")
 player.pos = WIDTH/2,HEIGHT - 120 - player.height/2
-PLAYER_SPEED = 7.5
+PLAYER_SPEED = WIDTH//120 - 0.5
 player.speed = 0
 
 chest_icon = Actor("chest icon")
