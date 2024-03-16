@@ -16,6 +16,6 @@ class Chest(Tile):
         self.is_open = is_open
         self.bottom = HEIGHT - Actor("brick/0").height
         self.frame = 0
-        super().__init__(name, variant, (x,self.bottom + Actor("chest/0/0").height/2))
+        super().__init__(name, variant, (x,self.bottom - Actor("chest/0/0").height/2))
     def image(self):
         return self.name+"/"+str(self.variant)+"/"+str(self.frame)

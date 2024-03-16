@@ -1,3 +1,4 @@
+import sys
 import pgzrun
 import asyncio
 
@@ -18,6 +19,16 @@ player.speed = 0
 
 chest_icon = Actor("chest icon")
 chest_icon.pos = (chest_icon.width,chest_icon.height)
+
+left_button = Actor("left_button")
+left_button.pos = (left_button.width/2 + 10, HEIGHT - left_button.height/2 - 10)
+
+right_button = Actor("right_button")
+right_button.pos = (WIDTH - right_button.width/2 - 10, HEIGHT - right_button.height/2 - 10)
+
+mouse_hitbox = Rect((0,0),(2, 2))
+go_left = False
+go_right = False
 
 mazes = []
 
@@ -266,18 +277,59 @@ def on_key_down():
             build_room(room_number)
     elif keyboard.escape: set_up_game()
 
-def on_mouse_down():
+def on_mouse_up():
+    global go_left
+    global go_right
+    go_left = False
+    go_right = False
+
+def on_mouse_down(pos):
+    global go_left
+    global go_right
+    global mouse_hitbox
     global number_of_found_chests
+    global room_number
     chests = [tile for tile in maze.rooms[room_number].tiles if isinstance(tile,Chest)]
-    if(mouse.LEFT and any(chests)):
-        for chest in chests:
-            if(iscolliding(player,Actor(chest.image(),chest.pos),150) and
-               not chest.is_open):
-                chest.is_open = True
-                number_of_found_chests += 1
+    if(mouse.LEFT):
+        mouse_hitbox.left = pos[0]-1
+        mouse_hitbox.top = pos[1]-1
+        if any(chests):
+            for chest in chests:
+                if(iscolliding(mouse_hitbox,Actor(chest.image(),chest.pos),10) and
+                   not chest.is_open):
+                    chest.is_open = True
+                    number_of_found_chests += 1
+        if is_in_browser():
+            if iscolliding(mouse_hitbox,right_button,10):
+                go_right = True
+            elif iscolliding(mouse_hitbox,left_button,10):
+                go_left = True
+            player_colide()
+            if "ladder" in player_colliding:
+                for sprite in all_sprites:
+                    if sprite.name == "ladder" and iscolliding(mouse_hitbox,sprite,10):
+                        if(maze.rooms[room_number].north() == 1 and mouse_hitbox.bottom < HEIGHT/2):
+                            room_number -= maze.width
+                            build_room(room_number)
+                        elif(maze.rooms[room_number].south() == 1 and mouse_hitbox.bottom > HEIGHT/2):
+                            room_number += maze.width
+                            build_room(room_number)
+                    
+            elif("door" in player_colliding):
+                for sprite in all_sprites:
+                    if sprite.name == "door" and iscolliding(mouse_hitbox,sprite,10):
+                        exit_game()
+                        set_up_game()
+
+    
+
 
 load_mazes()
 set_up_game()
+
+def is_in_browser():
+    #return sys.platform == "emscripten"
+    return True #for debug purposes
 
 def draw():
     screen.clear()
@@ -285,14 +337,17 @@ def draw():
         sprite.draw()
     player.draw()
     chest_icon.draw()
+    if is_in_browser():
+        left_button.draw()
+        right_button.draw()
     screen.draw.text(str(number_of_found_chests) + "/" + str(number_of_chests), center = chest_icon.pos, color="yellow", fontsize=50)
 
 def update():
     if not game_ended:
         player.speed = 0
-        if keyboard.left:
+        if(keyboard.left or go_left):
             player.speed -= PLAYER_SPEED
-        if keyboard.right:
+        if(keyboard.right or go_right):
             player.speed += PLAYER_SPEED
         player_move()
         player_colide()
