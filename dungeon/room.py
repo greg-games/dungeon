@@ -4,7 +4,7 @@ class Room:
         self.distance = distance
         self.tiles = tiles
         self.is_chest_near = False
-
+        self.has_chest = False
     def no_of_exits(self):
         return sum(self.exits)
     def west(self):
