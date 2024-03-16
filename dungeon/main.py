@@ -471,7 +471,7 @@ def draw():
         sprite.draw()
     player.draw()
     chest_icon.draw()
-    screen.draw.text(str(number_of_found_chests) + "/" + str(number_of_chests), center = chest_icon.pos, color="yellow", fontsize=50)
+    #screen.draw.text(str(number_of_found_chests) + "/" + str(number_of_chests), center = chest_icon.pos, color="yellow", fontsize=50)
 
 def update():
     if not game_ended:
