@@ -1,7 +1,5 @@
-#!pgzrun
-import sys
-import asyncio
 import pgzrun
+import asyncio
 
 from random import *
 from addon import Addon
@@ -300,11 +298,8 @@ def update():
         player_colide()
         animate_chests()   
 
-if sys.platform != "emscripten":
+async def main():
     pgzrun.go()
+    await asyncio.sleep(0)
 
-# async def main():
-#     pgzrun.go()
-#     await asyncio.sleep(0)
-
-# asyncio.run(main())
+asyncio.run(main())
