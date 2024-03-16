@@ -90,6 +90,7 @@ symbols2 = {
 }
 
 def print_maze(maze, maze_width, maze_height):
+    print("")
     print("Width:", maze_width)
     print("Height:", maze_height)
     for i in range(maze_height):
@@ -124,17 +125,6 @@ while x < len(lines):
     mazes.append((maze, maze_width, maze_height))
     x += 1
 
-maze_number = -1 #int(input("maze_number: "))
-if maze_number == -1:
-    maze_width = 10 #int(input("maze_width: "))
-    maze_height = 5 #int(input("maze_height: "))
-    maze = generate_maze(maze_width,maze_height,True)
-else: 
-    maze = mazes[maze_number][0]
-    maze_width = mazes[maze_number][1]
-    maze_height = mazes[maze_number][2]
-print_maze(maze, maze_width, maze_height)
-
 def generate_maze_distance(maze_width):
     maze[0] = (0,0,1,0)
     maze_distance = [-1 for x in range(len(maze))]
@@ -150,38 +140,60 @@ def generate_maze_distance(maze_width):
                     else:
                         next_tile.append((i+(j-2)*maze_width,d+1))
     return maze_distance
-    
-def print_distance(distance_list):
-    for i in range(maze_height):
-        for j in range(maze_width):
-            #print(symbols[tuple(maze[i*maze_width+j])], end=" ")
-            if(len(str(distance_list[i*maze_width+j])) < 2):
-                print("0", end = "")
-            print(distance_list[i*maze_width+j], end="  ")
-        print("")
-
-maze_distance = generate_maze_distance(maze_width)
-print_distance(maze_distance)
 
 TITLE = "Greg Games - Dungeon"
 WIDTH = 840
 HEIGHT = 600
+
+NO_VARIANT = -1
+
+game_ended = False
 
 player = Actor("alien")
 player.pos = WIDTH/2,HEIGHT - 120 - player.height/2
 PLAYER_SPEED = 7.5
 player.speed = 0
 
-player_colliding = []
-
-all_sprites = []
-room_number = 0
-number_of_chests = 0
-number_of_found_chests = 0
 chest_icon = Actor("chest icon")
 chest_icon.pos = (chest_icon.width,chest_icon.height)
 
-NO_VARIANT = -1
+def set_up_game():
+    global game_ended
+    global maze_number
+    global maze
+    global maze_width
+    global maze_height
+    global maze_distance
+    global room_number
+    global all_sprites
+    global player_colliding
+    global number_of_chests
+    global number_of_found_chests
+
+    game_ended = False
+
+    maze_number = -1 #int(input("maze_number: "))
+    if maze_number == -1:
+        maze_width = randint(10,13)#10 #int(input("maze_width: "))
+        maze_height = randint(4,6)#5 #int(input("maze_height: "))
+        maze = generate_maze(maze_width,maze_height,True)
+    else: 
+        maze = mazes[maze_number][0]
+        maze_width = mazes[maze_number][1]
+        maze_height = mazes[maze_number][2]
+    print_maze(maze, maze_width, maze_height)
+    maze_distance = generate_maze_distance(maze_width)
+
+    player_colliding = []
+
+    all_sprites = []
+    room_number = 0
+    number_of_chests = 0
+    number_of_found_chests = 0
+
+    make_tiles()
+
+    build_room(room_number)
 
 def iscolliding(object1,object2,distance):
     return (object1.right + distance > object2.left and 
@@ -378,9 +390,7 @@ def tiles_in_range(i,distance):
                     if(k%2 == 0):
                         next_tile.append((j+k-1,d+1))
                     else:
-                        next_tile.append((j+(k-2)*maze_width,d+1))
-
-make_tiles()   
+                        next_tile.append((j+(k-2)*maze_width,d+1))   
 
 def build_room(i):
     global all_sprites
@@ -424,14 +434,24 @@ def animate_chests():
             chest.frame += 1
             build_room(room_number)
 
+def exit_game():
+    global game_ended
+    print("game ended")
+    game_ended = True
+
 def on_key_down():
     global room_number
-    if(keyboard.up and "ladder" in player_colliding and maze[room_number].north == 1):
-        room_number -= maze_width
-        build_room(room_number)
-    elif(keyboard.down and "ladder" in player_colliding and maze[room_number].south == 1):
-        room_number += maze_width
-        build_room(room_number)
+    if not game_ended:
+        if keyboard.up:
+            if("ladder" in player_colliding and maze[room_number].north == 1):
+                room_number -= maze_width
+                build_room(room_number)
+            elif("door" in player_colliding):
+                exit_game()
+        elif(keyboard.down and "ladder" in player_colliding and maze[room_number].south == 1):
+            room_number += maze_width
+            build_room(room_number)
+    elif keyboard.escape: set_up_game()
 
 def on_mouse_down():
     global number_of_found_chests
@@ -442,10 +462,9 @@ def on_mouse_down():
                not chest.is_open):
                 chest.is_open = True
                 number_of_found_chests += 1
-                print("You found: ", number_of_found_chests, "/", number_of_chests, " chests.")
 
+set_up_game()
 
-build_room(room_number)
 def draw():
     screen.clear()
     for sprite in all_sprites:
@@ -455,14 +474,15 @@ def draw():
     screen.draw.text(str(number_of_found_chests) + "/" + str(number_of_chests), center = chest_icon.pos, color="yellow", fontsize=50)
 
 def update():
-    player_colide()
-    player.speed = 0
-    if keyboard.left:
-        player.speed -= PLAYER_SPEED
-    if keyboard.right:
-        player.speed += PLAYER_SPEED
-    player_move()
-    animate_chests()   
+    if not game_ended:
+        player.speed = 0
+        if keyboard.left:
+            player.speed -= PLAYER_SPEED
+        if keyboard.right:
+            player.speed += PLAYER_SPEED
+        player_move()
+        player_colide()
+        animate_chests()   
 
 async def main():
     pgzrun.go()
