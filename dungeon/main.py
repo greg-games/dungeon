@@ -9,11 +9,6 @@ from maze import Maze
 from room import Room
 from tile import Tile, Chest
 from pgzero.actor import Actor
-from pgzero.game import PGZeroGame
-from pgzero.runner import run_mod
-from pgzrun import mod 
-import pygame
-import pgzero
 
 game_ended = False
 
@@ -305,69 +300,7 @@ def update():
         animate_chests()   
 
 async def main():
-    await run_mod(mod)
-    
-
-# Preserve the original function:
-PGZeroGame.originalMainloop = PGZeroGame.mainloop
-PGZeroGame.originalRun = PGZeroGame.run
-originalRunMod = run_mod
-
-async def _mainloop(self):
-    """Run the main loop of Pygame Zero."""
-    clock = pygame.time.Clock()
-    self.reinit_screen()
-
-    update = self.get_update_func()
-    draw = self.get_draw_func()
-    self.load_handlers()
-
-    pgzclock = pgzero.clock.clock
-
-    self.need_redraw = True
-    while True:
-        dt = clock.tick(60) / 1000.0
-
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                return
-            if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_q and \
-                        event.mod & (pygame.KMOD_CTRL | pygame.KMOD_META):
-                    sys.exit(0)
-                self.keyboard._press(event.key)
-            elif event.type == pygame.KEYUP:
-                self.keyboard._release(event.key)
-            self.dispatch_event(event)
-
-        pgzclock.tick(dt)
-
-        if update:
-            update(dt)
-
-        screen_change = self.reinit_screen()
-        if screen_change or update or pgzclock.fired or self.need_redraw:
-            draw()
-            pygame.display.flip()
-            self.need_redraw = False
-
-        await asyncio.sleep(0)
-
-
-async def _run(self):
-    """Invoke the main loop, and then clean up."""
-    try:
-        await self.mainloop()
-    finally:
-        pygame.display.quit()
-        pygame.mixer.quit()
-
-async def _run_mod(mod):
-    """Run the module."""
-    await PGZeroGame(mod).run()
-
-PGZeroGame.mainloop = _mainloop
-PGZeroGame.run = _run
-run_mod = _run_mod
+    pgzrun.go()
+    await asyncio.sleep(0)
 
 asyncio.run(main())
