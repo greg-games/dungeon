@@ -1,3 +1,4 @@
+#!pgzrun
 import asyncio
 import pgzrun
 from random import*
