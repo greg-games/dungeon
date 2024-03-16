@@ -328,8 +328,8 @@ load_mazes()
 set_up_game()
 
 def is_in_browser():
-    #return sys.platform == "emscripten"
-    return True #for debug purposes
+    return sys.platform == "emscripten"
+    #return True #for debug purposes
 
 def draw():
     screen.clear()
