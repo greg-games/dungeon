@@ -1,3 +1,4 @@
 build/*
 .vscode/*
 dungeon/__pycache__/*
+dungeon/build/*

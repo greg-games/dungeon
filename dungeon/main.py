@@ -44,6 +44,13 @@ symbols2 = {
 "╻":(0,0,0,1),
 }
 
+def is_in_browser():
+    return sys.platform == "emscripten"
+    #return True #for debug purposes
+
+if is_in_browser():
+    PLAYER_SPEED*=1.5
+
 def load_mazes():
     file = open("labirynty.txt", "r", encoding="utf-8")
     lines = file.readlines()
