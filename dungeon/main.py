@@ -130,6 +130,7 @@ def make_room_frame(i):
     else:
         maze.rooms[i].tiles.append(Tile("background",NO_VARIANT,(WIDTH/2, brick.height/2)))
         maze.rooms[i].tiles.append(Tile("ladder",NO_VARIANT,(WIDTH/2, ladder.height/2)))
+        maze.rooms[i].north_ladder_index = len(maze.rooms[i].tiles) - 1
     
     if(maze.rooms[i].east() == 0):
         name, variant = "brick", randint(0,7)
@@ -143,6 +144,7 @@ def make_room_frame(i):
     else:
         maze.rooms[i].tiles.append(Tile("background",NO_VARIANT,(WIDTH/2, HEIGHT - brick.height/2)))
         maze.rooms[i].tiles.append(Tile("ladder",NO_VARIANT,(WIDTH/2, HEIGHT)))
+        maze.rooms[i].south_ladder_index = len(maze.rooms[i].tiles) - 1
 
 def make_addons(i):
     crack = Actor("crack")
@@ -153,6 +155,7 @@ def make_addons(i):
     ]
     if(i == 0):
         maze.rooms[i].tiles.append(Tile("door",NO_VARIANT,(WIDTH/2,HEIGHT - 120 - Actor("door").height/2)))
+        maze.rooms[i].door_index = len(maze.rooms[i].tiles) - 1
     for addon in all_addons:
         for _ in range(addon.max_number_on_screan):
             if(random() > 0.5):
@@ -187,7 +190,7 @@ def make_chests(i):
         elif(maze.rooms[i].west() == 1):
             x = WIDTH*3/4
         maze.rooms[i].tiles.append(Chest("chest",chest_type,x,False))
-        maze.rooms[i].has_chest = True
+        maze.rooms[i].chest_index = len(maze.rooms[i].tiles) - 1
         number_of_chests += 1
 
 def add_more_chests():
@@ -207,7 +210,7 @@ def add_more_chests():
                 x = WIDTH/2
             if(chest_type > 0): chest_type -= 1
             maze.rooms[i].tiles.append(Chest("chest",chest_type,x,False))
-            maze.rooms[i].has_chest = True
+            maze.rooms[i].chest_index = len(maze.rooms[i].tiles) - 1
             number_of_chests += 1
             maze.tiles_in_range(i,3)
     print(number_of_chests)
@@ -289,28 +292,31 @@ def on_mouse_down(pos):
     if(mouse.LEFT):
         mouse_hitbox.left = pos[0]-1
         mouse_hitbox.top = pos[1]-1
-        if maze.rooms[room_number].has_chest:
-            for chest in chests:
-                if(iscolliding(mouse_hitbox,Actor(chest.image(),chest.pos),10) and
-                   not chest.is_open):
-                    chest.is_open = True
-                    number_of_found_chests += 1
-        if "ladder" in player_colliding:
-            for sprite in all_sprites:
-                if sprite.name == "ladder" and iscolliding(mouse_hitbox,sprite,10):
-                    if(maze.rooms[room_number].north() == 1 and mouse_hitbox.bottom < HEIGHT/2):
-                        room_number -= maze.width
-                        build_room(room_number)
-                    elif(maze.rooms[room_number].south() == 1 and mouse_hitbox.bottom > HEIGHT/2):
-                        room_number += maze.width
-                        build_room(room_number)
-                    break    
-        elif("door" in player_colliding):
-            for sprite in all_sprites:
-                if sprite.name == "door" and iscolliding(mouse_hitbox,sprite,10):
+        if maze.rooms[room_number].chest_index > -1:
+            chest = all_sprites[maze.rooms[room_number].chest_index]
+            if(iscolliding(mouse_hitbox,chest,10) and
+               not maze.rooms[room_number].chest().is_open):
+                maze.rooms[room_number].chest().is_open = True
+                number_of_found_chests += 1
+        if(maze.rooms[room_number].north_ladder_index > -1 
+           and "ladder" in player_colliding):
+            ladder = all_sprites[maze.rooms[room_number].north_ladder_index]
+            if (iscolliding(mouse_hitbox,ladder,10) 
+                and mouse_hitbox.bottom < HEIGHT/2):
+                room_number -= maze.width
+                build_room(room_number)
+        if(maze.rooms[room_number].south_ladder_index > -1 
+           and "ladder" in player_colliding):
+            ladder = all_sprites[maze.rooms[room_number].south_ladder_index]
+            if (iscolliding(mouse_hitbox,ladder,10) and mouse_hitbox.bottom > HEIGHT/2):
+                room_number += maze.width
+                build_room(room_number) 
+        elif(maze.rooms[room_number].door_index > -1 
+             and "door" in player_colliding):
+                door = all_sprites[maze.rooms[room_number].door_index]
+                if iscolliding(mouse_hitbox,door,10):
                     exit_game()
                     set_up_game()
-                    break
         if pos[0] > WIDTH*3/4: go_right = True
         elif pos[0] < WIDTH/4: go_left = True
 
