@@ -10,6 +10,8 @@ from room import Room
 from tile import Tile, Chest
 from pgzero.actor import Actor
 
+seed(None)
+
 game_ended = False
 
 player = Actor("alien")
