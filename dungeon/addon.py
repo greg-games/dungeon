@@ -1,5 +1,3 @@
-from constants import NO_VARIANT
-
 class Addon:
     def __init__(self, name:str, number_of_variants:int, max_number_on_screan:int,min_distance:int, 
                  can_collide:tuple, x_start:int, x_end:int, y_start:int, y_end:int):
@@ -14,6 +12,4 @@ class Addon:
         self.y_end = y_end
 
     def image(self,variant):
-        if variant == NO_VARIANT:
-            return self.name
-        return self.name+"/"+str(variant)   
+        return f"{self.name}/{variant}"

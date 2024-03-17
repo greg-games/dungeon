@@ -5,10 +5,9 @@ class Room:
         self.tiles = tiles
         self.is_chest_near = False
         self.has_chest = False
-        self.door_index = -1
-        self.chest_index = -1
         self.north_ladder_index = -1
         self.south_ladder_index = -1
+        self.animated_tiles_indexes = []
     def no_of_exits(self):
         return sum(self.exits)
     def west(self):
@@ -27,5 +26,5 @@ class Room:
         return (self.distance > 7 and 
            not self.is_chest_near and
            self.distance*2 < max_allowed_distance)
-    def chest(self):
-        return self.tiles[self.chest_index]
+    def animated_tile(self,i):
+        return self.tiles[self.animated_tiles_indexes[i]]

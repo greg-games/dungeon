@@ -1,4 +1,4 @@
-NO_VARIANT = -1
+NO_VARIANT = 0
 
 WEST = 0
 NORTH = 1

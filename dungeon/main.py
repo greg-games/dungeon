@@ -7,19 +7,19 @@ from addon import Addon
 from constants import NO_VARIANT, HEIGHT, WIDTH, TITLE
 from maze import Maze
 from room import Room
-from tile import Tile, Chest
+from tile import Tile, AnimatedTile, Chest
 from pgzero.actor import Actor
 
 seed(None)
 
 game_ended = False
 
-player = Actor("alien")
+player = Actor("player")
 player.pos = WIDTH/2,HEIGHT - 120 - player.height/2
 PLAYER_SPEED = WIDTH//120 - 0.5
 player.speed = 0
 
-chest_icon = Actor("chest icon")
+chest_icon = Actor("chest icon/0")
 chest_icon.pos = (chest_icon.width,chest_icon.height)
 
 mouse_hitbox = Rect((0,0),(2, 2))
@@ -27,6 +27,8 @@ go_left = False
 go_right = False
 
 mazes = []
+
+FRAME_SPEED = 0.5
 
 symbols2 = {
 "┼":(1,1,1,1),
@@ -52,6 +54,7 @@ def is_in_browser():
 
 if is_in_browser():
     PLAYER_SPEED*=1.5
+    FRAME_SPEED = 1
 
 def load_mazes():
     file = open("labirynty.txt", "r", encoding="utf-8")
@@ -79,14 +82,14 @@ def set_up_game():
     global number_of_chests
     global number_of_found_chests
 
-    game_ended = False
-
     maze_number = -1 #int(input("maze_number: "))
     if maze_number == -1:
         maze = Maze(randint(10,13),randint(4,6),[])
     else: 
         maze = mazes[maze_number]
     print(maze)
+
+    player.x = WIDTH/2
 
     player_colliding = []
 
@@ -98,6 +101,8 @@ def set_up_game():
     make_tiles()
 
     build_room(room_number)
+
+    game_ended = False
 
 def iscolliding(object1,object2,distance):
     return (object1.right + distance > object2.left and 
@@ -115,7 +120,7 @@ def make_tiles():
 
 def make_room_frame(i):
     brick = Actor("brick/0")
-    ladder = Actor("ladder")
+    ladder = Actor("ladder/0")
     for x in range(WIDTH//brick.width - 2):
         for y in range(HEIGHT//brick.height - 2):
             maze.rooms[i].tiles.append(Tile("background",NO_VARIANT,(brick.width*(x + 3/2), brick.height*(y + 3/2))))
@@ -156,15 +161,16 @@ def make_room_frame(i):
         maze.rooms[i].south_ladder_index = len(maze.rooms[i].tiles) - 1
 
 def make_addons(i):
-    crack = Actor("crack")
+    crack = Actor("crack/0")
     all_addons = [ #(name, number of variants, max number on screan, min distance, can_collide, x start, x end, y start, y end)
         Addon("torch",0,2,200,("background"),WIDTH/10, WIDTH*9/10, HEIGHT/2, HEIGHT/2),
         Addon("crack",0,3,100,("background"),crack.width/2, WIDTH - crack.width/2, HEIGHT/10, HEIGHT*7/8),
         Addon("crack",0,3,100,("brick"),crack.width/2, WIDTH - crack.width/2, HEIGHT/10, HEIGHT*7/8)
     ]
     if(i == 0):
-        maze.rooms[i].tiles.append(Tile("door",NO_VARIANT,(WIDTH/2,HEIGHT - 120 - Actor("door").height/2)))
-        maze.rooms[i].door_index = len(maze.rooms[i].tiles) - 1
+        maze.rooms[i].tiles.append(AnimatedTile("door",1,(WIDTH/2,HEIGHT - 120 - Actor("door/0/0").height/2)))
+        maze.rooms[i].animated_tiles_indexes.append(len(maze.rooms[i].tiles) - 1)
+        maze.rooms[i].tiles[-1].is_animating = True
     for addon in all_addons:
         for _ in range(addon.max_number_on_screan):
             if(random() > 0.5):
@@ -198,8 +204,9 @@ def make_chests(i):
             x = WIDTH/4
         elif(maze.rooms[i].west() == 1):
             x = WIDTH*3/4
-        maze.rooms[i].tiles.append(Chest("chest",chest_type,x,False))
-        maze.rooms[i].chest_index = len(maze.rooms[i].tiles) - 1
+        maze.rooms[i].tiles.append(Chest("chest",chest_type,x))
+        maze.rooms[i].animated_tiles_indexes.append(len(maze.rooms[i].tiles) - 1)
+
         number_of_chests += 1
 
 def add_more_chests():
@@ -209,7 +216,6 @@ def add_more_chests():
             if isinstance(tile,Chest):
                 maze.tiles_in_range(i,3)
                 break
-    print("")
     for i in range(len(maze.rooms)):
         max_allowed_distance = randrange(maze.size)
         if(maze.rooms[i].chest_is_allowed(max_allowed_distance)):
@@ -218,11 +224,10 @@ def add_more_chests():
             if(maze.rooms[i].north() != 1 and maze.rooms[i].south() != 1):
                 x = WIDTH/2
             if(chest_type > 0): chest_type -= 1
-            maze.rooms[i].tiles.append(Chest("chest",chest_type,x,False))
-            maze.rooms[i].chest_index = len(maze.rooms[i].tiles) - 1
+            maze.rooms[i].tiles.append(Chest("chest",chest_type,x))
+            maze.rooms[i].animated_tiles_indexes.append(len(maze.rooms[i].tiles) - 1)
             number_of_chests += 1
             maze.tiles_in_range(i,3)
-    print(number_of_chests)
 
 def build_room(i):
     global all_sprites
@@ -260,17 +265,29 @@ def player_move():
             room_number += 1
             build_room(room_number)
 
-def animate_chests():
-    chests = [tile for tile in maze.rooms[room_number].tiles if isinstance(tile,Chest)]
-    for chest in chests:
-        if chest.is_open and chest.frame < 6:
-            chest.frame += 1
-            build_room(room_number)
+def animate_tiles():
+    for i in range(len(maze.rooms[room_number].tiles)):
+        tile = maze.rooms[room_number].tiles[i]
+        if isinstance(tile,AnimatedTile):
+            tile.next_frame(FRAME_SPEED)
+            all_sprites[i].image = tile.image()
+            if isinstance(tile,Chest):
+                all_sprites[i].bottom = tile.bottom
+            if(tile.has_finished_animating and tile.name == "door"):
+                tile.is_animating = False
+                tile.frame = 0
+                if tile.variant == 1:
+                    tile.variant = 0
+                    tile.has_finished_animating = False
+                else:
+                    exit_game()
+                    break
 
 def exit_game():
     global game_ended
     print("game ended")
     game_ended = True
+    set_up_game()
 
 def on_key_down():
     global room_number
@@ -284,7 +301,6 @@ def on_key_down():
         elif(keyboard.down and "ladder" in player_colliding and maze.rooms[room_number].south() == 1):
             room_number += maze.width
             build_room(room_number)
-    elif keyboard.escape: set_up_game()
 
 def on_mouse_up():
     global go_left
@@ -301,12 +317,15 @@ def on_mouse_down(pos):
     if(mouse.LEFT):
         mouse_hitbox.left = pos[0]-1
         mouse_hitbox.top = pos[1]-1
-        if maze.rooms[room_number].chest_index > -1:
-            chest = all_sprites[maze.rooms[room_number].chest_index]
-            if(iscolliding(mouse_hitbox,chest,10) and
-               not maze.rooms[room_number].chest().is_open):
-                maze.rooms[room_number].chest().is_open = True
-                number_of_found_chests += 1
+        for i in range(len(maze.rooms[room_number].animated_tiles_indexes)):
+            tile_sprite = all_sprites[maze.rooms[room_number].animated_tiles_indexes[i]]
+            tile = maze.rooms[room_number].animated_tile(i)
+            if(tile.triger == "click" and iscolliding(mouse_hitbox,tile_sprite,10) and
+               not tile.is_animating):
+                if(tile.name != "door" or tile.variant == 0):
+                    tile.is_animating = True
+                    if tile.name == "chest":
+                        number_of_found_chests += 1
         if(maze.rooms[room_number].north_ladder_index > -1 
            and "ladder" in player_colliding):
             ladder = all_sprites[maze.rooms[room_number].north_ladder_index]
@@ -320,12 +339,6 @@ def on_mouse_down(pos):
             if (iscolliding(mouse_hitbox,ladder,10) and mouse_hitbox.bottom > HEIGHT/2):
                 room_number += maze.width
                 build_room(room_number) 
-        elif(maze.rooms[room_number].door_index > -1 
-             and "door" in player_colliding):
-                door = all_sprites[maze.rooms[room_number].door_index]
-                if iscolliding(mouse_hitbox,door,10):
-                    exit_game()
-                    set_up_game()
         if pos[0] > WIDTH*3/4: go_right = True
         elif pos[0] < WIDTH/4: go_left = True
 
@@ -348,7 +361,7 @@ def update():
         if(keyboard.right or go_right):
             player.speed += PLAYER_SPEED
         player_move()
-        animate_chests()   
+        animate_tiles()  
 
 async def main():
     pgzrun.go()
