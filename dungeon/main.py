@@ -4,17 +4,18 @@ import asyncio
 
 from random import *
 from addon import Addon
-from constants import NO_VARIANT, HEIGHT, WIDTH, TITLE
+from constants import NO_VARIANT, HEIGHT, WIDTH, TITLE, IDLE, RUNNING_LEFT, RUNNING_RIGHT
 from maze import Maze
 from room import Room
 from tile import Tile, AnimatedTile, Chest
+from player import Player
 from pgzero.actor import Actor
 
 seed(None)
 
 game_ended = False
 
-player = Actor("player")
+player = Player()
 player.pos = WIDTH/2,HEIGHT - 120 - player.height/2
 PLAYER_SPEED = WIDTH//120 - 0.5
 player.speed = 0
@@ -28,7 +29,8 @@ go_right = False
 
 mazes = []
 
-FRAME_SPEED = 0.5
+TILE_FRAME_SPEED = 0.5
+PLAYER_FRAME_SPEED = 0.2
 
 symbols2 = {
 "┼":(1,1,1,1),
@@ -53,8 +55,9 @@ def is_in_browser():
     #return True #for debug purposes
 
 if is_in_browser():
-    PLAYER_SPEED*=1.5
-    FRAME_SPEED = 1
+    PLAYER_SPEED *= 1.75
+    TILE_FRAME_SPEED = 1
+    PLAYER_FRAME_SPEED = 0.5
 
 def load_mazes():
     file = open("labirynty.txt", "r", encoding="utf-8")
@@ -89,7 +92,7 @@ def set_up_game():
         maze = mazes[maze_number]
     print(maze)
 
-    player.x = WIDTH/2
+    player.change_x(WIDTH/2)
 
     player_colliding = []
 
@@ -245,31 +248,34 @@ def player_colide():
     player_colliding = []
     for sprite in all_sprites:
         if sprite.name != "background":
-            if(iscolliding(player,sprite,0)):
+            if(iscolliding(player.hitbox,sprite,0)):
                 player_colliding.append(sprite.name)
 
 def player_move():
     global room_number
     global player_colliding
-    player.x += player.speed
+    player.change_x(player.x + player.speed)
     player_colide()
     if "brick" in player_colliding:
         player.x -= player.speed
         player_colide()
     elif(player.x < player.width/2 and maze.rooms[room_number].west() == 1):
             room_number -= 1
-            player.x = WIDTH - player.width/2
+            player.change_x(WIDTH - player.width/2)
             build_room(room_number)
     elif(player.x > WIDTH - player.width/2 and maze.rooms[room_number].east() == 1):
-            player.x = player.width/2
+            player.change_x(player.width/2)
             room_number += 1
             build_room(room_number)
+
+def animate_player():
+    player.animate(PLAYER_FRAME_SPEED)
 
 def animate_tiles():
     for i in range(len(maze.rooms[room_number].tiles)):
         tile = maze.rooms[room_number].tiles[i]
         if isinstance(tile,AnimatedTile):
-            tile.next_frame(FRAME_SPEED)
+            tile.next_frame(TILE_FRAME_SPEED)
             all_sprites[i].image = tile.image()
             if isinstance(tile,Chest):
                 all_sprites[i].bottom = tile.bottom
@@ -358,10 +364,15 @@ def update():
         player.speed = 0
         if(keyboard.left or go_left):
             player.speed -= PLAYER_SPEED
+            player.change_state(RUNNING_LEFT)
         if(keyboard.right or go_right):
             player.speed += PLAYER_SPEED
+            player.change_state(RUNNING_RIGHT)
+        if player.speed == 0:
+            player.change_state(IDLE)
         player_move()
-        animate_tiles()  
+        animate_tiles()
+        animate_player()  
 
 async def main():
     pgzrun.go()
