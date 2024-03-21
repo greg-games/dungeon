@@ -7,7 +7,7 @@ from addon import Addon
 from constants import NO_VARIANT, HEIGHT, WIDTH, TITLE, IDLE, RUNNING_LEFT, RUNNING_RIGHT,SOUND_NOT_PLAYING, SOUND_WILL_BE_PLAYED, SOUND_IS_PLAYING
 from maze import Maze
 from room import Room
-from tile import Tile, AnimatedTile, Chest
+from tile import Tile, AnimatedTile, Chest, Door
 from player import Player
 from pgzero.actor import Actor
 from pgzero.loaders import sounds
@@ -172,7 +172,7 @@ def make_addons(i):
         Addon("crack",0,3,100,("brick"),crack.width/2, WIDTH - crack.width/2, HEIGHT/10, HEIGHT*7/8)
     ]
     if(i == 0):
-        maze.rooms[i].tiles.append(AnimatedTile("door",1,(WIDTH/2,HEIGHT - 120 - Actor("door/0/0").height/2)))
+        maze.rooms[i].tiles.append(Door("door",1,(WIDTH/2,HEIGHT - 120 - Actor("door/0/0").height/2)))
         maze.rooms[i].animated_tiles_indexes.append(len(maze.rooms[i].tiles) - 1)
         maze.rooms[i].tiles[-1].is_animating = True
     for addon in all_addons:
@@ -297,6 +297,7 @@ def animate_tiles():
                 tile.is_animating = False
                 tile.frame = 0
                 if tile.variant == 1:
+                    sounds.load(tile.sound_path()).play()
                     tile.variant = 0
                     tile.has_finished_animating = False
                 else:
@@ -352,21 +353,28 @@ def on_mouse_down(pos):
             if(tile.triger == "click" and iscolliding(mouse_hitbox,tile_sprite,10)):
                clicked_on_anything = True
                if not tile.is_animating:
-                if(tile.name != "door" or tile.variant == 0):
+                if tile.name == "door":
+                    if (tile.variant == 0 and "door" in player_colliding):
+                        tile.is_animating = True
+                        sounds.load(tile.sound_path()).play()
+                else:
                     tile.is_animating = True
                     if tile.name == "chest":
                         number_of_found_chests += 1
+                        sounds.load(tile.sound_path()).play()
         if(maze.rooms[room_number].north_ladder_index > -1 
            and "ladder" in player_colliding):
             ladder = all_sprites[maze.rooms[room_number].north_ladder_index]
             if (iscolliding(mouse_hitbox,ladder,10) 
                 and mouse_hitbox.bottom < HEIGHT/2):
+                sounds.ladder.ladder.play()
                 room_number -= maze.width
                 build_room(room_number)
         if(maze.rooms[room_number].south_ladder_index > -1 
            and "ladder" in player_colliding):
             ladder = all_sprites[maze.rooms[room_number].south_ladder_index]
             if (iscolliding(mouse_hitbox,ladder,10) and mouse_hitbox.bottom > HEIGHT/2):
+                sounds.ladder.ladder.play()
                 room_number += maze.width
                 build_room(room_number) 
         if not clicked_on_anything:

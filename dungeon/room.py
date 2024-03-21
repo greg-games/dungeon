@@ -21,7 +21,7 @@ class Room:
     def set_distance(self,distance):
         self.distance = distance
     def chest_type(self):
-        return min(self.distance//7,3)
+        return min(self.distance//7, 3)
     def chest_is_allowed(self, max_allowed_distance):
         return (self.distance > 7 and 
            not self.is_chest_near and

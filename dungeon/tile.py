@@ -41,3 +41,13 @@ class Chest(AnimatedTile):
     def __init__(self, name:str, variant:int, x:int):
         self.bottom = HEIGHT - Actor("brick/0").height
         super().__init__(name, variant, (x,self.bottom - Actor("chest/0/0").height/2))
+    
+    def sound_path(self):
+        return f"chest/{self.variant}"
+
+class Door(AnimatedTile):
+    def sound_path(self):
+        if self.variant:
+            return "door/close"
+        else:
+            return "door/open"
