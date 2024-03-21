@@ -4,12 +4,13 @@ import asyncio
 
 from random import *
 from addon import Addon
-from constants import NO_VARIANT, HEIGHT, WIDTH, TITLE, IDLE, RUNNING_LEFT, RUNNING_RIGHT
+from constants import NO_VARIANT, HEIGHT, WIDTH, TITLE, IDLE, RUNNING_LEFT, RUNNING_RIGHT,SOUND_NOT_PLAYING, SOUND_WILL_BE_PLAYED, SOUND_IS_PLAYING
 from maze import Maze
 from room import Room
 from tile import Tile, AnimatedTile, Chest
 from player import Player
 from pgzero.actor import Actor
+from pgzero.loaders import sounds
 
 seed(None)
 
@@ -254,19 +255,32 @@ def player_colide():
 def player_move():
     global room_number
     global player_colliding
+    player.speed = 0
+    if(keyboard.left or go_left):
+        player.speed -= PLAYER_SPEED
+    if(keyboard.right or go_right):
+        player.speed += PLAYER_SPEED
     player.change_x(player.x + player.speed)
     player_colide()
     if "brick" in player_colliding:
         player.x -= player.speed
+        player.change_state(IDLE)
         player_colide()
-    elif(player.x < player.width/2 and maze.rooms[room_number].west() == 1):
-            room_number -= 1
-            player.change_x(WIDTH - player.width/2)
-            build_room(room_number)
-    elif(player.x > WIDTH - player.width/2 and maze.rooms[room_number].east() == 1):
-            player.change_x(player.width/2)
-            room_number += 1
-            build_room(room_number)
+    elif(player.speed ==  0):
+        player.change_state(IDLE)
+    else:
+        if(player.speed > 0):
+            player.change_state(RUNNING_RIGHT)
+            if(player.x > WIDTH - player.hitbox.width/2 and maze.rooms[room_number].east() == 1):
+                room_number += 1
+                player.change_x(player.hitbox.width/2)
+                build_room(room_number)
+        else:
+            player.change_state(RUNNING_LEFT)
+            if(player.x < player.hitbox.width/2 and maze.rooms[room_number].west() == 1):
+                room_number -= 1
+                player.change_x(WIDTH - player.hitbox.width/2)
+                build_room(room_number)
 
 def animate_player():
     player.animate(PLAYER_FRAME_SPEED)
@@ -288,6 +302,14 @@ def animate_tiles():
                 else:
                     exit_game()
                     break
+
+def play_sounds():
+    for sound in player.all_sounds:
+        if player.all_sounds[sound] == SOUND_WILL_BE_PLAYED:
+            player.all_sounds[sound] = SOUND_IS_PLAYING
+            sounds.load(player.sound_path(sound)).play(-1)
+        elif player.all_sounds[sound] == SOUND_NOT_PLAYING:
+            sounds.load(player.sound_path(sound)).stop()
 
 def exit_game():
     global game_ended
@@ -323,11 +345,13 @@ def on_mouse_down(pos):
     if(mouse.LEFT):
         mouse_hitbox.left = pos[0]-1
         mouse_hitbox.top = pos[1]-1
+        clicked_on_anything = False
         for i in range(len(maze.rooms[room_number].animated_tiles_indexes)):
             tile_sprite = all_sprites[maze.rooms[room_number].animated_tiles_indexes[i]]
             tile = maze.rooms[room_number].animated_tile(i)
-            if(tile.triger == "click" and iscolliding(mouse_hitbox,tile_sprite,10) and
-               not tile.is_animating):
+            if(tile.triger == "click" and iscolliding(mouse_hitbox,tile_sprite,10)):
+               clicked_on_anything = True
+               if not tile.is_animating:
                 if(tile.name != "door" or tile.variant == 0):
                     tile.is_animating = True
                     if tile.name == "chest":
@@ -345,8 +369,9 @@ def on_mouse_down(pos):
             if (iscolliding(mouse_hitbox,ladder,10) and mouse_hitbox.bottom > HEIGHT/2):
                 room_number += maze.width
                 build_room(room_number) 
-        if pos[0] > WIDTH*3/4: go_right = True
-        elif pos[0] < WIDTH/4: go_left = True
+        if not clicked_on_anything:
+            if pos[0] > WIDTH*5/8: go_right = True
+            elif pos[0] < WIDTH*3/8: go_left = True
 
 load_mazes()
 set_up_game()
@@ -361,18 +386,10 @@ def draw():
 
 def update():
     if not game_ended:
-        player.speed = 0
-        if(keyboard.left or go_left):
-            player.speed -= PLAYER_SPEED
-            player.change_state(RUNNING_LEFT)
-        if(keyboard.right or go_right):
-            player.speed += PLAYER_SPEED
-            player.change_state(RUNNING_RIGHT)
-        if player.speed == 0:
-            player.change_state(IDLE)
         player_move()
         animate_tiles()
         animate_player()  
+        play_sounds()
 
 async def main():
     pgzrun.go()
