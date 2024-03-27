@@ -11,6 +11,8 @@ class Maze:
         else:
             self.rooms = rooms
         self.__generate_distance()
+        for i in range(len(self.rooms)):
+            self.rooms[i].rooms_in_range = self.rooms_in_range(i,3)
 
     def __str__(self):
         maze_str = ""
@@ -102,3 +104,7 @@ class Maze:
                         else:
                             next_room.append((j+(k-2)*self.width,d+1))
         return rooms_in_range
+    
+    def uppdate_skeletones(self,i,change):
+        for room in self.rooms[i].rooms_in_range:
+            room.no_skeletons_in_range += change

@@ -27,6 +27,8 @@ class Room:
         self.is_chest_in_range = False
         self.is_max_skeletons_in_range = False
         self.no_skeletons = 0
+        self.no_skeletons_in_range = 0
+        self.rooms_in_range = []
         self.skeletons_chance = 0
         self.north_ladder_index = -1
         self.south_ladder_index = -1
