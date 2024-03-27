@@ -1,24 +1,6 @@
 from room import Room
 from random import randrange, random
 
-symbols = {
-(1,1,1,1):"┼",
-(1,1,1,0):"┴",
-(1,0,1,1):"┬",
-(1,1,0,1):"┤",
-(0,1,1,1):"├",
-(1,1,0,0):"┘",
-(0,1,1,0):"└",
-(1,0,0,1):"┐",
-(0,0,1,1):"┌",
-(1,0,1,0):"─",
-(0,1,0,1):"│",
-(1,0,0,0):"╸",
-(0,1,0,0):"╹",
-(0,0,1,0):"╺",
-(0,0,0,1):"╻",
-}
-
 class Maze:
     def __init__(self, width:int, height:int, rooms:list):
         self.width = width
@@ -34,17 +16,17 @@ class Maze:
         maze_str = ""
         for i in range(self.height):
             for j in range(self.width):
-                maze_str += symbols[tuple(self.rooms[i*self.width+j].exits)] + " "
+                maze_str += str(self.rooms[i*self.width+j]) + " "
             maze_str +=  "  ||  "
             if(2*i < self.height):
                 for j in range(self.width):
-                    maze_str += symbols[tuple(self.rooms[(2*i)*self.width+j].exits)]
+                    maze_str += str(self.rooms[(2*i)*self.width+j])
             maze_str += "\n"
             for j in range(self.width): maze_str += "  "
             maze_str += "  ||  "
             if(2*i+1 < self.height):
                 for j in range(self.width):
-                    maze_str += symbols[tuple(self.rooms[(2*i+1)*self.width+j].exits)]
+                    maze_str += str(self.rooms[(2*i+1)*self.width+j])
             maze_str += "\n"
         return f"\nWidth: {self.width}\nHeight: {self.height}\n{maze_str}"
     
@@ -104,16 +86,19 @@ class Maze:
                     self.rooms[x].exits[z[1]] = 1
                     self.rooms[z[0]].exits[(z[1] + 2) % 4] = 1   
     
-    def tiles_in_range(self,i,distance):
-        tiles = [-1 for x in range(len(self.rooms))]
-        next_tile = [(i,0)]
-        while(len(next_tile) > 0):
-            j, d = next_tile.pop(0)
-            if(tiles[j] == -1 and d <= distance):
-                self.rooms[j].is_chest_near = True
+    def rooms_in_range(self,i,distance):
+        visited = [False for x in range(len(self.rooms))]
+        rooms_in_range = []
+        next_room = [(i,0)]
+        while(len(next_room) > 0):
+            j, d = next_room.pop(0)
+            if(not visited[j] and d <= distance):
+                visited[j] = True
+                rooms_in_range.append(self.rooms[j])
                 for k in range(4):
                     if(self.rooms[j].exits[k] == 1):
                         if(k%2 == 0):
-                            next_tile.append((j+k-1,d+1))
+                            next_room.append((j+k-1,d+1))
                         else:
-                            next_tile.append((j+(k-2)*self.width,d+1))   
+                            next_room.append((j+(k-2)*self.width,d+1))
+        return rooms_in_range

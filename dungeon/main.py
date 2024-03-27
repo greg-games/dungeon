@@ -218,7 +218,8 @@ def add_more_chests():
     for i in range(len(maze.rooms)):
         for tile in maze.rooms[i].tiles:
             if isinstance(tile,Chest):
-                maze.tiles_in_range(i,3)
+                for room in maze.rooms_in_range(i,3):
+                    room.is_chest_in_range = True
                 break
     for i in range(len(maze.rooms)):
         max_allowed_distance = randrange(maze.size)
@@ -231,7 +232,8 @@ def add_more_chests():
             maze.rooms[i].tiles.append(Chest("chest",chest_type,x))
             maze.rooms[i].animated_tiles_indexes.append(len(maze.rooms[i].tiles) - 1)
             number_of_chests += 1
-            maze.tiles_in_range(i,3)
+            for room in maze.rooms_in_range(i,3):
+                room.is_chest_in_range = True
 
 def build_room(i):
     global all_sprites
@@ -242,7 +244,49 @@ def build_room(i):
         if isinstance(tile,Chest):
             tile_sprite.bottom = tile.bottom
         tile_sprite.name = tile.name
-        all_sprites.append(tile_sprite)   
+        all_sprites.append(tile_sprite)
+    add_skeletons()
+
+def add_skeletons():
+    print("")
+    for i in range(len(maze.rooms)):
+        if i == room_number:
+            maze.rooms[i].skeletons_chance = 0
+        elif i != 0:
+            maze.rooms[i].skeletons_chance += 1
+    for i in range(len(maze.rooms)):
+        is_max_skeletons_in_range(i)
+    for i in range(len(maze.rooms)):
+        room = maze.rooms[i]
+        if room.is_max_skeletons_in_range:
+            room.skeletons_chance = 0
+        if(room.no_skeletons < 2 and 
+           random() < room.skeletons_chance / maze.size - 1/4):
+            room.no_skeletons += 1
+            for j in range(len(maze.rooms)):
+                is_max_skeletons_in_range(j)
+        if(i%maze.width == 0):
+            print("")
+        print(maze.rooms[i], end= "")
+        if i == room_number:
+            print("*",end= "  ")
+        elif room.no_skeletons == 1:
+            print("s",end= "  ")#print(f"{maze.rooms[j*maze.width+k].skeletons_chance:02}",end= " ")
+        elif room.no_skeletons == 2:
+            print("ss",end= " ")
+        else:
+            print(f"{maze.rooms[i].skeletons_chance:02}",end= " ")
+
+def is_max_skeletons_in_range(i, max_no_skeletons = 3, distance = 2):
+    rooms_in_range = maze.rooms_in_range(i,distance)
+    no_skeletons = 0
+    for room in rooms_in_range:
+        no_skeletons += room.no_skeletons
+    if no_skeletons == max_no_skeletons:
+        for room in rooms_in_range:
+            room.is_max_skeletons_in_range = True
+    elif(maze.rooms[i].no_skeletons > 0 and no_skeletons > max_no_skeletons):
+        raise RuntimeError(f"room number {i} sees too many skeletones")
 
 def player_colide():
     global player_colliding
