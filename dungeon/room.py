@@ -25,11 +25,10 @@ class Room:
         self.tiles = tiles
         self.chests_in_range = 0
         self.is_chest_in_range = False
-        self.is_max_skeletons_in_range = False
+        self.has_closed_chest = False
         self.no_skeletons = 0
-        self.no_skeletons_in_range = 0
+        self.last_visited = 0
         self.rooms_in_range = []
-        self.skeletons_chance = 0
         self.north_ladder_index = -1
         self.south_ladder_index = -1
         self.animated_tiles_indexes = []
@@ -53,7 +52,11 @@ class Room:
         return min(self.distance//7, 3)
     def chest_is_allowed(self, max_allowed_distance):
         return (self.distance > 7 and 
-           not self.is_chest_in_range and
-           self.distance*2 < max_allowed_distance)
+                not self.is_chest_in_range and
+                self.distance*2 < max_allowed_distance)
+    def skeleton_is_allowed(self):
+        return (self.distance != 0 and 
+                self.no_skeletons == 0 and 
+                self.last_visited > 7)
     def animated_tile(self,i):
         return self.tiles[self.animated_tiles_indexes[i]]

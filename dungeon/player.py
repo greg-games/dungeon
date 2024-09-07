@@ -1,15 +1,15 @@
 from pgzero.actor import Actor
 from pgzero.rect import Rect
 import os
-from constants import IDLE, RUNNING_RIGHT, RUNNING_LEFT,SOUND_NOT_PLAYING, SOUND_WILL_BE_PLAYED
+from constants import SOUND_NOT_PLAYING, SOUND_WILL_BE_PLAYED
 
 class Player(Actor):
     def __init__(self):
         self.all_sounds = {sound_name[:-4]:SOUND_NOT_PLAYING for sound_name in os.listdir(f"sounds/player")}
-        self.state = IDLE
+        self.state = "idle"
         self.__frame = 0
-        self.__no_frames = [len(os.listdir(f"images/player/{a}")) for a in range(len(os.listdir(f"images/player")))]
-        super().__init__("player/0/0")
+        self.__no_frames = {a:len(os.listdir(f"images/player/variant_0/{a}")) for a in os.listdir(f"images/player/variant_0")}
+        super().__init__("player/variant_0/idle/0")
         self.__hitbox_width = self.width + 27
         self.__hitbox_height = self.height
         self.hitbox = Rect(
@@ -21,13 +21,13 @@ class Player(Actor):
         self.__frame += frame_speed
         if self.__frame > self.__no_frames[self.state] - 1:
             self.__frame = 0
-        self.image = f"player/{self.state}/{round(self.__frame)}"
+        self.image = f"player/variant_0/{self.state}/{round(self.__frame)}"
     
     def change_state(self,state):
         if self.state != state:
             self.state = state
             self.__frame = 0
-            self.toggle_sound("running",[RUNNING_RIGHT,RUNNING_LEFT])
+            self.toggle_sound("running",["running_right","running_left"])
 
     def toggle_sound(self, sound_name:str, states:list):
         if(self.state in states):

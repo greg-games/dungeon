@@ -12,4 +12,4 @@ class Addon:
         self.y_end = y_end
 
     def image(self,variant):
-        return f"{self.name}/{variant}"
+        return f"{self.name}/variant_{variant}"
