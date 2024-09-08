@@ -85,7 +85,7 @@ def set_up_game():
     global player_colliding
     global number_of_chests
     global number_of_found_chests
-    global skeleton_chance
+    global no_visited_rooms
 
     maze_number = -1 #int(input("maze_number: "))
     if maze_number == -1:
@@ -102,7 +102,7 @@ def set_up_game():
     room_number = 0
     number_of_chests = 0
     number_of_found_chests = 0
-    skeleton_chance = 0
+    no_visited_rooms = 0
 
     make_tiles()
 
@@ -241,6 +241,8 @@ def add_more_chests():
 
 def build_room(i):
     global all_sprites
+    global no_visited_rooms
+    no_visited_rooms += 1
     all_sprites = []
     for tile in maze.rooms[i].tiles:
         tile_sprite = Actor(tile.image())
@@ -249,9 +251,9 @@ def build_room(i):
             tile_sprite.bottom = tile.bottom
         tile_sprite.name = tile.name
         all_sprites.append(tile_sprite)
-    add_skeletons()
     for room in maze.rooms:
         room.last_visited += 1
+    add_skeletons()
     maze.rooms[i].last_visited = 0
 
 def maze_printable(func):
@@ -272,13 +274,12 @@ def maze_printable(func):
                 print(1,end= "  ")
             else:
                 print(0,end= "  ")
-        print(skeleton_chance/maze.size)
+        print(str(no_visited_rooms) + " / " + str(maze.size),end= " ")
+        print(str(round(skeleton_chance(no_visited_rooms/maze.size)*100)) + "%")
     return wrapper
 
 @maze_printable
 def add_skeletons():
-    global skeleton_chance
-    skeleton_chance += 1
     room = maze.rooms[room_number]
     if room.skeleton_is_allowed():
         if room.has_closed_chest:
@@ -286,7 +287,7 @@ def add_skeletons():
             #remove later
             print("added skeleton!")
         else:
-            if (random() < min((3*skeleton_chance) / (7*maze.size) - 3/28,0.75)):
+            if (random() < skeleton_chance(no_visited_rooms/maze.size)):
                 if (random() < 0.5):
                     room.no_skeletons += 1
                     print("added skeleton!")
@@ -296,8 +297,10 @@ def add_skeletons():
     #if room.no_skeletons > 0:
         #room.no_skeletons -= 1
     # end of symulating fight
-            
-            
+
+def skeleton_chance(x):
+    return min(100*(2 ** (2*x -12)) + 0.22, 0.75)
+
 def player_colide():
     global player_colliding
     player_colliding = []
@@ -405,18 +408,18 @@ def on_mouse_down(pos):
             tile_sprite = all_sprites[maze.rooms[room_number].animated_tiles_indexes[i]]
             tile = maze.rooms[room_number].animated_tile(i)
             if(tile.triger == "click" and iscolliding(mouse_hitbox,tile_sprite,10)):
-               clicked_on_anything = True
-               if not tile.is_animating:
-                if tile.name == "door":
-                    if (tile.variant == 0 and "door" in player_colliding):
+                clicked_on_anything = True
+                if not tile.is_animating:
+                    if tile.name == "door":
+                        if (tile.variant == 0 and "door" in player_colliding):
+                            tile.is_animating = True
+                            sounds.load(tile.sound_path()).play()
+                    else:
                         tile.is_animating = True
-                        sounds.load(tile.sound_path()).play()
-                else:
-                    tile.is_animating = True
-                    if tile.name == "chest":
-                        number_of_found_chests += 1
-                        maze.rooms[room_number].has_closed_chest = False
-                        sounds.load(tile.sound_path()).play()
+                        if tile.name == "chest":
+                            number_of_found_chests += 1
+                            maze.rooms[room_number].has_closed_chest = False
+                            sounds.load(tile.sound_path()).play()
         if(maze.rooms[room_number].north_ladder_index > -1 
            and "ladder" in player_colliding):
             ladder = all_sprites[maze.rooms[room_number].north_ladder_index]
