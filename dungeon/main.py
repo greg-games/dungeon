@@ -8,7 +8,7 @@ from constants import NO_VARIANT, HEIGHT, WIDTH, TITLE,SOUND_NOT_PLAYING, SOUND_
 from maze import Maze
 from room import Room
 from tile import Tile, AnimatedTile, Chest, Door
-from player import Player
+from entity import Player, Enemy, all_entities
 from pgzero.actor import Actor
 from pgzero.loaders import sounds
 
@@ -31,7 +31,7 @@ go_right = False
 mazes = []
 
 TILE_FRAME_SPEED = 0.5
-PLAYER_FRAME_SPEED = 0.2
+ENTITY_FRAME_SPEED = 0.2
 
 symbols2 = {
 "┼":(1,1,1,1),
@@ -58,7 +58,7 @@ def is_in_browser():
 if is_in_browser():
     PLAYER_SPEED *= 1.75
     TILE_FRAME_SPEED = 1
-    PLAYER_FRAME_SPEED = 0.5
+    ENTITY_FRAME_SPEED = 0.5
 
 def load_mazes():
     file = open("labirynty.txt", "r", encoding="utf-8")
@@ -243,6 +243,7 @@ def build_room(i):
     global all_sprites
     global no_visited_rooms
     no_visited_rooms += 1
+    add_skeletons()
     all_sprites = []
     for tile in maze.rooms[i].tiles:
         tile_sprite = Actor(tile.image())
@@ -251,9 +252,10 @@ def build_room(i):
             tile_sprite.bottom = tile.bottom
         tile_sprite.name = tile.name
         all_sprites.append(tile_sprite)
+    for enemy in maze.rooms[i].enemies:
+        all_sprites.append(enemy)
     for room in maze.rooms:
         room.last_visited += 1
-    add_skeletons()
     maze.rooms[i].last_visited = 0
 
 def maze_printable(func):
@@ -285,18 +287,23 @@ def add_skeletons():
         if room.has_closed_chest:
             room.no_skeletons += 1
             #remove later
-            print("added skeleton!")
+            spawn_skeleton()
         else:
             if (random() < skeleton_chance(no_visited_rooms/maze.size)):
                 if (random() < 0.5):
                     room.no_skeletons += 1
-                    print("added skeleton!")
+                    spawn_skeleton()
                 room.no_skeletons += 1
-                print("added skeleton!")
+                spawn_skeleton()
     # start of symulating fight
     #if room.no_skeletons > 0:
         #room.no_skeletons -= 1
     # end of symulating fight
+
+def spawn_skeleton():
+    skeleton = Enemy("skeleton","variant_0")
+    skeleton.pos = WIDTH*randint(1,3)/4+randint(-100,100),HEIGHT - 120 - skeleton.height/2
+    maze.rooms[room_number].enemies.append(skeleton)
 
 def skeleton_chance(x):
     return min(100*(2 ** (2*x -12)) + 0.22, 0.75)
@@ -339,8 +346,9 @@ def player_move():
                 player.change_x(WIDTH - player.hitbox.width/2)
                 build_room(room_number)
 
-def animate_player():
-    player.animate(PLAYER_FRAME_SPEED)
+def animate_entities():
+    for entity in all_entities:
+        entity.animate(ENTITY_FRAME_SPEED)
 
 def animate_tiles():
     for i in range(len(maze.rooms[room_number].tiles)):
@@ -454,7 +462,7 @@ def update():
     if not game_ended:
         player_move()
         animate_tiles()
-        animate_player()  
+        animate_entities()  
         play_sounds()
 
 async def main():

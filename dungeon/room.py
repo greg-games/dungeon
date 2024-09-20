@@ -32,6 +32,7 @@ class Room:
         self.north_ladder_index = -1
         self.south_ladder_index = -1
         self.animated_tiles_indexes = []
+        self.enemies = []
     
     def __str__(self):
         return symbols[tuple(self.exits)]

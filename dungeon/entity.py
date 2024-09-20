@@ -1,27 +1,33 @@
 from pgzero.actor import Actor
 from pgzero.rect import Rect
+from random import randrange
 import os
 from constants import SOUND_NOT_PLAYING, SOUND_WILL_BE_PLAYED
 
-class Player(Actor):
-    def __init__(self):
-        self.all_sounds = {sound_name[:-4]:SOUND_NOT_PLAYING for sound_name in os.listdir(f"sounds/player")}
+all_entities = []
+
+class Entity(Actor):
+    def __init__(self,name,variant):
+        self.name = name
+        self.variant = variant
+        self.all_sounds = {sound_name[:-4]:SOUND_NOT_PLAYING for sound_name in os.listdir(f"sounds/{self.name}")}
         self.state = "idle"
-        self.__frame = 0
-        self.__no_frames = {a:len(os.listdir(f"images/player/variant_0/{a}")) for a in os.listdir(f"images/player/variant_0")}
-        super().__init__("player/variant_0/idle/0")
+        self.__no_frames = {a:len(os.listdir(f"images/{self.name}/{self.variant}/{a}")) for a in os.listdir(f"images/{self.name}/{self.variant}")}
+        self.__frame = randrange(0,self.__no_frames["idle"])
+        super().__init__(f"{self.name}/{self.variant}/idle/0")
         self.__hitbox_width = self.width + 27
         self.__hitbox_height = self.height
         self.hitbox = Rect(
             (self.x - self.__hitbox_width/2, self.y - self.__hitbox_height/2), 
             (self.__hitbox_width, self.__hitbox_height)
             )
-    
+        all_entities.append(self)
+
     def animate(self,frame_speed):
         self.__frame += frame_speed
         if self.__frame > self.__no_frames[self.state] - 1:
             self.__frame = 0
-        self.image = f"player/variant_0/{self.state}/{round(self.__frame)}"
+        self.image = f"{self.name}/{self.variant}/{self.state}/{round(self.__frame)}"
     
     def change_state(self,state):
         if self.state != state:
@@ -41,4 +47,14 @@ class Player(Actor):
         self.hitbox.topleft = (self.x - self.hitbox.width/2, self.y - self.hitbox.height/2)
 
     def sound_path(self,sound):
-        return f"player/{sound}"
+        return f"{self.name}/{sound}"
+
+class Player(Entity):
+    def __init__(self):
+        super().__init__("player","variant_0")
+
+class Enemy(Entity):
+    def __init__(self,name,variant):
+        self.name = name
+        self.variant = variant
+        super().__init__(name,variant)
