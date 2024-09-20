@@ -286,7 +286,6 @@ def add_skeletons():
     if room.skeleton_is_allowed():
         if room.has_closed_chest:
             room.no_skeletons += 1
-            #remove later
             spawn_skeleton()
         else:
             if (random() < skeleton_chance(no_visited_rooms/maze.size)):
@@ -302,8 +301,19 @@ def add_skeletons():
 
 def spawn_skeleton():
     skeleton = Enemy("skeleton","variant_0")
-    skeleton.pos = WIDTH*randint(1,3)/4+randint(-100,100),HEIGHT - 120 - skeleton.height/2
-    maze.rooms[room_number].enemies.append(skeleton)
+    skeleton.y = HEIGHT - 120 - skeleton.height/2
+    for _ in range(1000):
+        x = WIDTH/2 + (WIDTH/4-30)*(2*randint(0,1)-1)+randint(-(WIDTH)/4+150,(WIDTH)/4-150)
+        skeleton.x = x
+        can_spawn = True
+        for enemy in maze.rooms[room_number].enemies:
+            if iscolliding(skeleton,enemy,10):
+                can_spawn = False
+                break
+        if can_spawn:
+            break
+    if can_spawn:
+        maze.rooms[room_number].enemies.append(skeleton)
 
 def skeleton_chance(x):
     return min(100*(2 ** (2*x -12)) + 0.22, 0.75)
