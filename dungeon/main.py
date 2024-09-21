@@ -5,6 +5,7 @@ import asyncio
 from random import *
 from addon import Addon
 from constants import NO_VARIANT, HEIGHT, WIDTH, TITLE,SOUND_NOT_PLAYING, SOUND_WILL_BE_PLAYED, SOUND_IS_PLAYING
+from global_functions import iscolliding
 from maze import Maze
 from room import Room
 from tile import Tile, AnimatedTile, Chest, Door
@@ -18,8 +19,6 @@ game_ended = False
 
 player = Player()
 player.pos = WIDTH/2,HEIGHT - 120 - player.height/2
-PLAYER_SPEED = WIDTH//120 - 0.5
-player.speed = 0
 
 chest_icon = Actor("chest icon/variant_0")
 chest_icon.pos = (chest_icon.width,chest_icon.height)
@@ -56,7 +55,7 @@ def is_in_browser():
     #return True #for debug purposes
 
 if is_in_browser():
-    PLAYER_SPEED *= 1.75
+    player.running_speed *= 1.75
     TILE_FRAME_SPEED = 1
     ENTITY_FRAME_SPEED = 0.5
 
@@ -82,7 +81,6 @@ def set_up_game():
     global maze
     global room_number
     global all_sprites
-    global player_colliding
     global number_of_chests
     global number_of_found_chests
     global no_visited_rooms
@@ -96,7 +94,7 @@ def set_up_game():
 
     player.change_x(WIDTH/2)
 
-    player_colliding = []
+    player.colliding = []
 
     all_sprites = []
     room_number = 0
@@ -109,12 +107,6 @@ def set_up_game():
     build_room(room_number)
 
     game_ended = False
-
-def iscolliding(object1,object2,distance):
-    return (object1.right + distance > object2.left and 
-            object1.left - distance < object2.right and 
-            object1.top - distance < object2.bottom and 
-            object1.bottom + distance > object2.top)
 
 def make_tiles():
     for i in range(len(maze.rooms)):
@@ -254,6 +246,7 @@ def build_room(i):
         all_sprites.append(tile_sprite)
     for enemy in maze.rooms[i].enemies:
         all_sprites.append(enemy)
+    all_sprites.append(player)
     for room in maze.rooms:
         room.last_visited += 1
     maze.rooms[i].last_visited = 0
@@ -318,43 +311,43 @@ def spawn_skeleton():
 def skeleton_chance(x):
     return min(100*(2 ** (2*x -12)) + 0.22, 0.75)
 
-def player_colide():
-    global player_colliding
-    player_colliding = []
-    for sprite in all_sprites:
-        if sprite.name != "background":
-            if(iscolliding(player.hitbox,sprite,0)):
-                player_colliding.append(sprite.name)
-
-def player_move():
-    global room_number
-    global player_colliding
+def change_player_speed():
     player.speed = 0
     if(keyboard.left or go_left):
-        player.speed -= PLAYER_SPEED
+        player.speed -= player.running_speed
     if(keyboard.right or go_right):
-        player.speed += PLAYER_SPEED
-    player.change_x(player.x + player.speed)
-    player_colide()
-    if "brick" in player_colliding:
+        player.speed += player.running_speed
+
+def realign_player():
+    global room_number
+    player.update_colliding(all_sprites)
+    if ("brick" in player.colliding or "skeleton" in player.colliding):
         player.x -= player.speed
         player.change_state("idle")
-        player_colide()
-    elif(player.speed ==  0):
-        player.change_state("idle")
-    else:
-        if(player.speed > 0):
-            player.change_state("running","right")
-            if(player.x > WIDTH - player.hitbox.width/2 and maze.rooms[room_number].east() == 1):
-                room_number += 1
-                player.change_x(player.hitbox.width/2)
-                build_room(room_number)
-        else:
-            player.change_state("running","left")
-            if(player.x < player.hitbox.width/2 and maze.rooms[room_number].west() == 1):
-                room_number -= 1
-                player.change_x(WIDTH - player.hitbox.width/2)
-                build_room(room_number)
+        player.update_colliding(all_sprites)
+    if(player.x < player.hitbox.width/2 and maze.rooms[room_number].west() == 1):
+        room_number -= 1
+        player.change_x(WIDTH - player.hitbox.width/2)
+        build_room(room_number)
+    elif(player.x > WIDTH - player.hitbox.width/2 and maze.rooms[room_number].east() == 1):
+        room_number += 1
+        player.change_x(player.hitbox.width/2)
+        build_room(room_number)
+
+def entity_move():
+    for sprite in all_sprites:
+        if isinstance(sprite,Enemy):
+            sprite.update_colliding(all_sprites)
+            if not ("player" in sprite.colliding or "skeleton" in sprite.colliding):
+                sprite.go_to_player(player.x)
+                sprite.move()
+            sprite.update_colliding(all_sprites)
+            if ("player" in sprite.colliding or "skeleton" in sprite.colliding):
+                sprite.x -= sprite.speed
+                sprite.change_state("idle")
+                sprite.speed = 0
+                sprite.update_colliding(all_sprites)
+    player.move()
 
 def animate_entities():
     for entity in all_entities:
@@ -397,12 +390,12 @@ def on_key_down():
     global room_number
     if not game_ended:
         if keyboard.up:
-            if("ladder" in player_colliding and maze.rooms[room_number].north() == 1):
+            if("ladder" in player.colliding and maze.rooms[room_number].north() == 1):
                 room_number -= maze.width
                 build_room(room_number)
-            elif("door" in player_colliding):
+            elif("door" in player.colliding):
                 exit_game()
-        elif(keyboard.down and "ladder" in player_colliding and maze.rooms[room_number].south() == 1):
+        elif(keyboard.down and "ladder" in player.colliding and maze.rooms[room_number].south() == 1):
             room_number += maze.width
             build_room(room_number)
 
@@ -429,7 +422,7 @@ def on_mouse_down(pos):
                 clicked_on_anything = True
                 if not tile.is_animating:
                     if tile.name == "door":
-                        if (tile.variant == 0 and "door" in player_colliding):
+                        if (tile.variant == 0 and "door" in player.colliding):
                             tile.is_animating = True
                             sounds.load(tile.sound_path()).play()
                     else:
@@ -439,7 +432,7 @@ def on_mouse_down(pos):
                             maze.rooms[room_number].has_closed_chest = False
                             sounds.load(tile.sound_path()).play()
         if(maze.rooms[room_number].north_ladder_index > -1 
-           and "ladder" in player_colliding):
+           and "ladder" in player.colliding):
             ladder = all_sprites[maze.rooms[room_number].north_ladder_index]
             if (iscolliding(mouse_hitbox,ladder,10) 
                 and mouse_hitbox.bottom < HEIGHT/2):
@@ -447,7 +440,7 @@ def on_mouse_down(pos):
                 room_number -= maze.width
                 build_room(room_number)
         if(maze.rooms[room_number].south_ladder_index > -1 
-           and "ladder" in player_colliding):
+           and "ladder" in player.colliding):
             ladder = all_sprites[maze.rooms[room_number].south_ladder_index]
             if (iscolliding(mouse_hitbox,ladder,10) and mouse_hitbox.bottom > HEIGHT/2):
                 sounds.ladder.ladder.play()
@@ -470,7 +463,9 @@ def draw():
 
 def update():
     if not game_ended:
-        player_move()
+        change_player_speed()
+        entity_move()
+        realign_player()
         animate_tiles()
         animate_entities()  
         play_sounds()
