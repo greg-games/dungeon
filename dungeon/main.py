@@ -344,13 +344,13 @@ def player_move():
         player.change_state("idle")
     else:
         if(player.speed > 0):
-            player.change_state("running_right")
+            player.change_state("running","right")
             if(player.x > WIDTH - player.hitbox.width/2 and maze.rooms[room_number].east() == 1):
                 room_number += 1
                 player.change_x(player.hitbox.width/2)
                 build_room(room_number)
         else:
-            player.change_state("running_left")
+            player.change_state("running","left")
             if(player.x < player.hitbox.width/2 and maze.rooms[room_number].west() == 1):
                 room_number -= 1
                 player.change_x(WIDTH - player.hitbox.width/2)

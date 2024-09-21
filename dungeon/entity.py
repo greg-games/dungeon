@@ -3,6 +3,7 @@ from pgzero.rect import Rect
 from random import randrange
 import os
 from constants import SOUND_NOT_PLAYING, SOUND_WILL_BE_PLAYED
+from pygame import transform
 
 all_entities = []
 
@@ -12,6 +13,7 @@ class Entity(Actor):
         self.variant = variant
         self.all_sounds = {sound_name[:-4]:SOUND_NOT_PLAYING for sound_name in os.listdir(f"sounds/{self.name}")}
         self.state = "idle"
+        self.dir = "right"
         self.__no_frames = {a:len(os.listdir(f"images/{self.name}/{self.variant}/{a}")) for a in os.listdir(f"images/{self.name}/{self.variant}")}
         self.__frame = randrange(0,self.__no_frames["idle"])
         super().__init__(f"{self.name}/{self.variant}/idle/0")
@@ -28,12 +30,15 @@ class Entity(Actor):
         if self.__frame > self.__no_frames[self.state] - 1:
             self.__frame = 0
         self.image = f"{self.name}/{self.variant}/{self.state}/{round(self.__frame)}"
+        if self.dir == "left":
+            self._surf = transform.flip(self._surf, True, False) 
     
-    def change_state(self,state):
+    def change_state(self,state,dir = None):
         if self.state != state:
-            self.state = state
             self.__frame = 0
-            self.toggle_sound("running",["running_right","running_left"])
+            self.state = state
+            if dir != None: self.dir = dir
+            self.toggle_sound("running",["running"])
 
     def toggle_sound(self, sound_name:str, states:list):
         if(self.state in states):
