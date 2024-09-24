@@ -1,6 +1,7 @@
 import sys
 import pgzrun
 import asyncio
+import pygame
 
 from random import *
 from addon import Addon
@@ -17,6 +18,7 @@ seed(None)
 
 game_ended = False
 
+pygame.display.set_mode((WIDTH, HEIGHT))
 player = Player()
 player.pos = WIDTH/2,HEIGHT - 120 - player.height/2
 

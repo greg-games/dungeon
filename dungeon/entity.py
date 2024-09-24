@@ -35,7 +35,7 @@ class Entity(Actor):
             self.frame = 0
         self.image = f"{self.name}/{self.variant}/{self.state}/{round(self.frame)}"
         if self.dir == "left":
-            self._surf = transform.flip(self._surf, True, False) 
+            self._orig_surf = transform.flip(self._orig_surf, True, False) 
     
     def change_state(self,state,dir = None):
         if dir != None: self.dir = dir
