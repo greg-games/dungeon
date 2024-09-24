@@ -18,7 +18,7 @@ class Entity(Actor):
         self.speed = 0
         self.running_speed = running_speed
         self.__no_frames = {a:len(os.listdir(f"images/{self.name}/{self.variant}/{a}")) for a in os.listdir(f"images/{self.name}/{self.variant}")}
-        self.__frame = randrange(0,self.__no_frames["idle"])
+        self.frame = randrange(0,self.__no_frames["idle"])
         super().__init__(f"{self.name}/{self.variant}/idle/0")
         self.__hitbox_width = self.width + 27
         self.__hitbox_height = self.height
@@ -30,17 +30,17 @@ class Entity(Actor):
         all_entities.append(self)
 
     def animate(self,frame_speed):
-        self.__frame += frame_speed
-        if self.__frame > self.__no_frames[self.state] - 1:
-            self.__frame = 0
-        self.image = f"{self.name}/{self.variant}/{self.state}/{round(self.__frame)}"
+        self.frame += frame_speed
+        if self.frame > self.__no_frames[self.state] - 1:
+            self.frame = 0
+        self.image = f"{self.name}/{self.variant}/{self.state}/{round(self.frame)}"
         if self.dir == "left":
             self._surf = transform.flip(self._surf, True, False) 
     
     def change_state(self,state,dir = None):
         if dir != None: self.dir = dir
         if self.state != state:
-            self.__frame = 0
+            self.frame = 0
             self.state = state
             self.toggle_sound("running",["running"])
 
@@ -84,6 +84,7 @@ class Enemy(Entity):
         self.name = name
         self.variant = variant
         super().__init__(name,variant,WIDTH//240 - 0.5)
+        self.hitbox.width = self.hitbox.width//3
 
     def go_to_player(self,player_x):
         if self.x > player_x:

@@ -337,6 +337,10 @@ def realign_player():
 def entity_move():
     for sprite in all_sprites:
         if isinstance(sprite,Enemy):
+            if sprite.x > player.x:
+                sprite.dir = "left"
+            else:
+                sprite.dir = "right"
             sprite.update_colliding(all_sprites)
             if not ("player" in sprite.colliding or "skeleton" in sprite.colliding):
                 sprite.go_to_player(player.x)
@@ -344,7 +348,13 @@ def entity_move():
             sprite.update_colliding(all_sprites)
             if ("player" in sprite.colliding or "skeleton" in sprite.colliding):
                 sprite.x -= sprite.speed
-                sprite.change_state("idle")
+                if (sprite.state == "running" or sprite.frame == 0):
+                    if ((not "player" in sprite.colliding) or (sprite.state != "idle" and random() < 0.5)):
+                        sprite.change_state("idle")
+                    elif random() < 0.5:
+                        sprite.change_state("attack1")
+                    else:
+                        sprite.change_state("attack2")
                 sprite.speed = 0
                 sprite.update_colliding(all_sprites)
     player.move()
