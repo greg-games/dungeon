@@ -6,7 +6,7 @@ import pygame
 from pgzero.rect import Rect
 from random import *
 from addon import Addon
-from constants import NO_VARIANT, HEIGHT, WIDTH, LEFT, RIGHT, TITLE, SOUND_NOT_PLAYING, SOUND_WILL_BE_PLAYED, SOUND_IS_PLAYING
+from constants import NO_VARIANT, HEIGHT, WIDTH, LEFT, RIGHT, TITLE, SOUND_NOT_PLAYING, SOUND_WILL_BE_PLAYED, SOUND_IS_PLAYING, NO_VARIABLE
 from global_functions import iscolliding
 from maze import Maze
 from room import Room
@@ -14,6 +14,7 @@ from tile import Tile, AnimatedTile, Chest, Door
 from entity import Entity, Player, Enemy, all_entities
 from pgzero.actor import Actor
 from pgzero.loaders import sounds
+from button import Button, all_buttons, buttons_in, buttons_out
 
 seed(None)
 
@@ -29,6 +30,8 @@ chest_icon.pos = (chest_icon.width,chest_icon.height)
 mouse_hitbox = Rect((0,0),(2, 2))
 go_left = False
 go_right = False
+go_up = False
+go_down = False
 
 mazes = []
 
@@ -61,6 +64,49 @@ if is_in_browser():
     player.running_speed *= 1.75
     TILE_FRAME_SPEED = 1
     ENTITY_FRAME_SPEED = 0.5
+
+def make_buttons():
+    jump_button = Button("jump",)
+    jump_button.set_pos((WIDTH-jump_button.width*3/2,HEIGHT-jump_button.height/2))
+
+    attack_button = Button("attack",)
+    attack_button.set_pos((WIDTH-attack_button.width/2,HEIGHT-attack_button.height/2))
+
+    left_button = Button("left",
+                         on_click=(lambda a: True, "NO_VARIABLE", "go_left"),
+                         on_release=(lambda a: False, "NO_VARIABLE", "go_left"))
+    left_button.set_pos((left_button.width/2,HEIGHT-left_button.height))
+
+    right_button = Button("right",
+                          on_click=(lambda a: True, "NO_VARIABLE", "go_right"),
+                          on_release=(lambda a: False, "NO_VARIABLE", "go_right"))
+    right_button.set_pos((right_button.width*5/2,HEIGHT-right_button.height))
+
+    up_button = Button("up",
+                       on_click=(lambda a: not go_down, "NO_VARIABLE", "go_up"))
+    up_button.set_pos((up_button.width*3/2,HEIGHT-up_button.height*3/2))
+
+    down_button = Button("down",
+                         on_click=(lambda a: not go_up, "NO_VARIABLE", "go_down"))
+    down_button.set_pos((down_button.width*3/2,HEIGHT-down_button.height/2))
+
+def buttons_on(event):
+    for button in all_buttons:
+        if event == "pressed":
+            function = lambda input: button.on_press(input)
+        elif event == "unpressed":
+            function = lambda input: button.on_unpress(input)
+        elif event == "clicked":
+            function = lambda input: button.on_click(mouse_hitbox,input)
+        elif event == "released":
+            function = lambda input: button.on_release(input)
+        
+        if buttons_out[button.name][event] != None:
+            x = function(globals()[buttons_in[button.name][event]])
+            if x != None:
+                globals()[buttons_out[button.name][event]] = x
+        else:
+            function(None)
 
 def load_mazes():
     file = open("labirynty.txt", "r", encoding="utf-8")
@@ -314,6 +360,12 @@ def spawn_skeleton():
 def skeleton_chance(x):
     return min(100*(2 ** (2*x -12)) + 0.22, 0.75)
 
+def update_buttons():
+    for button in all_buttons:
+        button.update_button(mouse_hitbox)
+        buttons_on("unpressed")
+        buttons_on("pressed")
+
 def change_player_speed():
     player.speed = 0
     if((keyboard.left or go_left) ^ (keyboard.right or go_right)):
@@ -322,6 +374,28 @@ def change_player_speed():
             player.dir = LEFT
         else:
             player.dir = RIGHT
+
+def pressing_up_or_down():
+    global room_number, go_down, go_up
+    if not game_ended:
+        if (keyboard.up or go_up) :
+            for thing in player.colliding:
+                if(thing.name == "ladder" and maze.rooms[room_number].north() == 1):
+                    sounds.ladder.ladder.play()
+                    room_number -= maze.width
+                    build_room(room_number)
+                    break
+                elif(thing.name =="door"):
+                    exit_game()
+                    break
+        elif((keyboard.down or go_down) and maze.rooms[room_number].south() == 1):
+            for thing in player.colliding:
+                if thing.name == "ladder":
+                    sounds.ladder.ladder.play()
+                    room_number += maze.width
+                    build_room(room_number)
+                    break
+        go_up,go_down = False, False
 
 def realign_player():
     global room_number
@@ -396,6 +470,12 @@ def animate_tiles():
                     exit_game()
                     break
 
+def open_chest(chest):
+    chest.is_animating = True
+    number_of_found_chests += 1
+    maze.rooms[room_number].has_closed_chest = False
+    sounds.load(tile.sound_path()).play()
+
 def play_sounds():
     for sound in player.all_sounds:
         if player.all_sounds[sound] == SOUND_WILL_BE_PLAYED:
@@ -410,78 +490,19 @@ def exit_game():
     game_ended = True
     set_up_game()
 
-def on_key_down():
-    global room_number
-    if not game_ended:
-        if keyboard.up:
-            for thing in player.colliding:
-                if(thing.name == "ladder" and maze.rooms[room_number].north() == 1):
-                    room_number -= maze.width
-                    build_room(room_number)
-                    break
-                elif(thing.name =="door"):
-                    exit_game()
-                    break
-        elif(keyboard.down and maze.rooms[room_number].south() == 1):
-            for thing in player.colliding:
-                if thing.name == "ladder":
-                    room_number += maze.width
-                    build_room(room_number)
-                    break
-
 def on_mouse_up():
-    global go_left
-    global go_right
-    go_left = False
-    go_right = False
+    buttons_on("released")
 
 def on_mouse_down(pos):
-    global go_left
-    global go_right
-    global mouse_hitbox
-    global number_of_found_chests
-    global room_number
     if(mouse.LEFT):
-        mouse_hitbox.left = pos[0]-1
-        mouse_hitbox.top = pos[1]-1
-        clicked_on_anything = False
-        for i in range(len(maze.rooms[room_number].animated_tiles_indexes)):
-            tile_sprite = all_sprites[maze.rooms[room_number].animated_tiles_indexes[i]]
-            tile = maze.rooms[room_number].animated_tile(i)
-            if(tile.triger == "click" and iscolliding(mouse_hitbox,tile_sprite,10)):
-                clicked_on_anything = True
-                if not tile.is_animating:
-                    if tile.name == "door":
-                        if (tile.variant == 0 and tile in player.colliding):
-                            tile.is_animating = True
-                            sounds.load(tile.sound_path()).play()
-                    else:
-                        tile.is_animating = True
-                        if tile.name == "chest":
-                            number_of_found_chests += 1
-                            maze.rooms[room_number].has_closed_chest = False
-                            sounds.load(tile.sound_path()).play()
-        for thing in player.colliding:
-            if(maze.rooms[room_number].north_ladder_index > -1 
-               and thing.name == "ladder"):
-                ladder = all_sprites[maze.rooms[room_number].north_ladder_index]
-                if (iscolliding(mouse_hitbox,ladder,10) 
-                    and mouse_hitbox.bottom < HEIGHT/2):
-                    sounds.ladder.ladder.play()
-                    room_number -= maze.width
-                    build_room(room_number)
-            if(maze.rooms[room_number].south_ladder_index > -1 
-               and thing.name == "ladder"):
-                ladder = all_sprites[maze.rooms[room_number].south_ladder_index]
-                if (iscolliding(mouse_hitbox,ladder,10) and mouse_hitbox.bottom > HEIGHT/2):
-                    sounds.ladder.ladder.play()
-                    room_number += maze.width
-                    build_room(room_number) 
-            if not clicked_on_anything:
-                if pos[0] > WIDTH*5/8: go_right = True
-                elif pos[0] < WIDTH*3/8: go_left = True
+        buttons_on("clicked")
+
+def on_mouse_move(pos):
+    mouse_hitbox.left = pos[0]-1
+    mouse_hitbox.top = pos[1]-1
 
 load_mazes()
+make_buttons()
 set_up_game()
 
 def draw():
@@ -493,12 +514,17 @@ def draw():
             screen.draw.rect(sprite.hitbox,"red",3)
     player.draw()
     chest_icon.draw()
+    for button in all_buttons:
+            button.background.draw()
+            button.draw()
     screen.draw.text(str(number_of_found_chests) + "/" + str(number_of_chests), center = chest_icon.pos, color="yellow", fontsize=50)
 
 def update():
     if not game_ended:
+        pressing_up_or_down()
         change_player_speed()
         entity_move()
+        update_buttons()
         animate_tiles()
         animate_entities()  
         play_sounds()

@@ -17,3 +17,5 @@ LEFT = -1
 SOUND_NOT_PLAYING = -1
 SOUND_WILL_BE_PLAYED = 0
 SOUND_IS_PLAYING = 1
+#placeholder variable
+NO_VARIABLE = None

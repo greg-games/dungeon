@@ -1,4 +1,4 @@
-def iscolliding(object1,object2,distance):
+def iscolliding(object1,object2,distance = 0):
     return (object1.right + distance > object2.left and 
             object1.left - distance < object2.right and 
             object1.top - distance < object2.bottom and 
