@@ -2,6 +2,8 @@ import sys
 import pgzrun
 import asyncio
 import pygame
+import numpy
+import pygame.surfarray
 
 from pgzero.rect import Rect
 from random import *
