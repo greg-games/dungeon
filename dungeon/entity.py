@@ -35,13 +35,14 @@ class Entity(Actor):
         self.colliding = []
         all_entities.append(self)
 
-    def is_anim_finished(self):
-        return round(self.frame) == self._no_frames[self.state]-1
-
     def animate(self):
         self.frame += self.frame_speed[self.state]
         if self.frame > self._no_frames[self.state] - 1:
             self.frame = 0
+            if(self.speed == 0):
+                self.change_state("idle")
+            else:
+                self.change_state("running",self.dir)
         self.image = f"{self.name}/{self.variant}/{self.state}/{round(self.frame)}"
         if self.dir == LEFT:
             self._orig_surf = transform.flip(self._orig_surf, True, False) 
@@ -98,8 +99,7 @@ class Player(Entity):
         self.frame_speed["jump"] *= 1.3
 
     def move(self):
-        if(self.state == "idle" or self.state == "running" or 
-           self.is_anim_finished()):
+        if(self.state == "idle" or self.state == "running"):
             self.change_x(self.x + self.speed*self.dir)
             if(self.speed == 0):
                 self.change_state("idle")

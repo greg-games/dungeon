@@ -51,14 +51,12 @@ class Button(Actor):
         self.background.pos = pos
 
     def on_release(self,input):
-        global go_right, go_left
         if (self.mode != "unpressed"):
             self.mode = "unpressed"
             if self._released != None:
                 return self._released(input)
 
     def on_click(self,mouse_hitbox,input):
-        global go_right, go_left
         if (iscolliding(mouse_hitbox, self.hitbox)
             and self.mode != "pressed"):
             self.mode = "pressed"

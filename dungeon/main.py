@@ -371,10 +371,11 @@ def change_player_speed():
     player.speed = 0
     if((keyboard.left or keyboard.a  or go_left) ^ (keyboard.right or keyboard.d or go_right)):
         player.speed = player.running_speed
-        if(keyboard.left or keyboard.a or go_left):
-            player.dir = LEFT
-        else:
-            player.dir = RIGHT
+        if player.state == "running" or player.state == "idle":
+            if(keyboard.left or keyboard.a or go_left):
+                player.dir = LEFT
+            else:
+                player.dir = RIGHT
 
 def pressing_up_or_down():
     global room_number, go_down, go_up
