@@ -1,4 +1,3 @@
-import sys
 import pgzrun
 import asyncio
 import pygame
@@ -9,7 +8,7 @@ from pgzero.rect import Rect
 from random import *
 from addon import Addon
 from constants import NO_VARIANT, HEIGHT, WIDTH, LEFT, RIGHT, TITLE, SOUND_NOT_PLAYING, SOUND_WILL_BE_PLAYED, SOUND_IS_PLAYING, NO_VARIABLE
-from global_functions import iscolliding
+from global_functions import iscolliding, is_in_browser
 from maze import Maze
 from room import Room
 from tile import Tile, AnimatedTile, Chest, Door
@@ -38,7 +37,6 @@ go_down = False
 mazes = []
 
 TILE_FRAME_SPEED = 0.5
-ENTITY_FRAME_SPEED = 0.2
 
 symbols2 = {
 "┼":(1,1,1,1),
@@ -58,20 +56,21 @@ symbols2 = {
 "╻":(0,0,0,1),
 }
 
-def is_in_browser():
-    return sys.platform == "emscripten"
-    #return True #for debug purposes
-
 if is_in_browser():
     player.running_speed *= 1.75
     TILE_FRAME_SPEED = 1
-    ENTITY_FRAME_SPEED = 0.5
 
 def make_buttons():
-    jump_button = Button("jump",)
+    duck_button = Button("duck",
+                         on_click=(lambda a: player.change_state("duck") if player.state == "idle" else None, "NO_VARIABLE", "NO_VARIABLE"))
+    duck_button.set_pos((WIDTH-duck_button.width*5/2,HEIGHT-duck_button.height/2))
+
+    jump_button = Button("jump",
+                         on_click=(lambda a: player.change_state("jump") if player.state == "idle" else None, "NO_VARIABLE", "NO_VARIABLE"))
     jump_button.set_pos((WIDTH-jump_button.width*3/2,HEIGHT-jump_button.height/2))
 
-    attack_button = Button("attack",)
+    attack_button = Button("attack",
+                           on_click=(lambda a: player.change_state("attack1") if player.state == "idle" else None, "NO_VARIABLE", "NO_VARIABLE"))
     attack_button.set_pos((WIDTH-attack_button.width/2,HEIGHT-attack_button.height/2))
 
     left_button = Button("left",
@@ -370,9 +369,9 @@ def update_buttons():
 
 def change_player_speed():
     player.speed = 0
-    if((keyboard.left or go_left) ^ (keyboard.right or go_right)):
+    if((keyboard.left or keyboard.a  or go_left) ^ (keyboard.right or keyboard.d or go_right)):
         player.speed = player.running_speed
-        if(keyboard.left or go_left):
+        if(keyboard.left or keyboard.a or go_left):
             player.dir = LEFT
         else:
             player.dir = RIGHT
@@ -380,7 +379,7 @@ def change_player_speed():
 def pressing_up_or_down():
     global room_number, go_down, go_up
     if not game_ended:
-        if (keyboard.up or go_up) :
+        if go_up:
             for thing in player.colliding:
                 if(thing.name == "ladder" and maze.rooms[room_number].north() == 1):
                     sounds.ladder.ladder.play()
@@ -390,7 +389,7 @@ def pressing_up_or_down():
                 elif(thing.name =="door"):
                     exit_game()
                     break
-        elif((keyboard.down or go_down) and maze.rooms[room_number].south() == 1):
+        elif(go_down and maze.rooms[room_number].south() == 1):
             for thing in player.colliding:
                 if thing.name == "ladder":
                     sounds.ladder.ladder.play()
@@ -405,7 +404,8 @@ def realign_player():
     for thing in player.colliding:
         if ((thing.name == "brick") or (thing.name == "skeleton" and player.islookingat(thing))):
             player.change_x(player.x - player.speed*player.dir)
-            player.change_state("idle")
+            if (player.state == "running"):
+                player.change_state("idle")
             player.update_colliding(all_sprites)
             break
     if(player.x < player.hitbox.width/2 and maze.rooms[room_number].west() == 1):
@@ -428,17 +428,22 @@ def entity_move():
                 sprite.update_colliding(all_sprites)
                 can_move = True
                 for thing in sprite.colliding:
-                    if (thing.name == "player" or thing.name == "skeleton"):
+                    if (thing.name == "player" or (thing.name == "skeleton" and sprite.islookingat(thing))):
                         can_move = False
                 if can_move:
                     sprite.go_to_player(player.x)
                     sprite.move()
             sprite.update_colliding(all_sprites)
             for thing in sprite.colliding:
-                if (thing.name == "player" or thing.name == "skeleton"):
+                if thing.name == "skeleton" and sprite.islookingat(thing):
+                    sprite.x -= sprite.speed*sprite.dir
+                    sprite.change_state("idle")
+                    sprite.speed = 0
+                    sprite.update_colliding(all_sprites)
+                if (thing.name == "player"):
                     sprite.x -= sprite.speed*sprite.dir
                     if (sprite.state == "running" or sprite.frame == 0):
-                        if (thing.name != "player" or (sprite.state != "idle" and random() < 0.5)):
+                        if (sprite.state != "idle" and random() < 0.4):
                             sprite.change_state("idle")
                         elif random() < 0.5:
                             sprite.change_state("attack1")
@@ -451,7 +456,7 @@ def entity_move():
 
 def animate_entities():
     for entity in all_entities:
-        entity.animate(ENTITY_FRAME_SPEED)
+        entity.animate()
 
 def animate_tiles():
     for i in range(len(maze.rooms[room_number].tiles)):
@@ -492,6 +497,20 @@ def exit_game():
     game_ended = True
     set_up_game()
 
+def on_key_down():
+    global go_down, go_up
+    if keyboard.up or keyboard.w:
+        go_up = True
+    elif keyboard.down or keyboard.s:
+        go_down = True
+    if player.state == "idle":
+        if keyboard.lshift:
+            player.change_state("jump")
+        elif keyboard.lctrl:
+            player.change_state("duck")
+        elif keyboard.space:
+            player.change_state("attack1")
+
 def on_mouse_up():
     buttons_on("released")
 
@@ -509,6 +528,7 @@ set_up_game()
 
 def draw():
     show_hitboxes = False
+    #show_hitboxes = True # for debugging only
     screen.clear()
     for sprite in all_sprites:
         sprite.draw()

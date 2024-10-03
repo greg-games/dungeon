@@ -3,10 +3,15 @@ from pgzero.rect import Rect
 from random import randrange
 import os
 from constants import LEFT, RIGHT, SOUND_NOT_PLAYING, SOUND_WILL_BE_PLAYED, WIDTH
-from global_functions import iscolliding
+from global_functions import iscolliding, is_in_browser
 from pygame import transform
 
 all_entities = []
+
+ENTITY_FRAME_SPEED = 0.2
+
+if is_in_browser():
+    ENTITY_FRAME_SPEED = 0.5
 
 class Entity(Actor):
     def __init__(self,name,variant,running_speed):
@@ -17,8 +22,9 @@ class Entity(Actor):
         self.dir = RIGHT
         self.speed = 0
         self.running_speed = running_speed
-        self.__no_frames = {a:len(os.listdir(f"images/{self.name}/{self.variant}/{a}")) for a in os.listdir(f"images/{self.name}/{self.variant}")}
-        self.frame = randrange(0,self.__no_frames["idle"])
+        self._no_frames = {a:len(os.listdir(f"images/{self.name}/{self.variant}/{a}")) for a in os.listdir(f"images/{self.name}/{self.variant}")}
+        self.frame_speed = {a:ENTITY_FRAME_SPEED for a in os.listdir(f"images/{self.name}/{self.variant}")}
+        self.frame = randrange(0,self._no_frames["idle"])
         super().__init__(f"{self.name}/{self.variant}/idle/0")
         self.__hitbox_width = self.width + 27
         self.__hitbox_height = self.height
@@ -29,9 +35,12 @@ class Entity(Actor):
         self.colliding = []
         all_entities.append(self)
 
-    def animate(self,frame_speed):
-        self.frame += frame_speed
-        if self.frame > self.__no_frames[self.state] - 1:
+    def is_anim_finished(self):
+        return round(self.frame) == self._no_frames[self.state]-1
+
+    def animate(self):
+        self.frame += self.frame_speed[self.state]
+        if self.frame > self._no_frames[self.state] - 1:
             self.frame = 0
         self.image = f"{self.name}/{self.variant}/{self.state}/{round(self.frame)}"
         if self.dir == LEFT:
@@ -82,7 +91,20 @@ class Entity(Actor):
 class Player(Entity):
     def __init__(self):
         super().__init__("player","variant_0",WIDTH//120 - 0.5)
-        self.hitbox.width = self.hitbox.width//4         
+        self.hitbox.width = self.hitbox.width//4
+        self.frame_speed["duck"] *= 0.5
+        self.frame_speed["idle"] *= 0.6
+        self.frame_speed["running"] *= 1.1
+        self.frame_speed["jump"] *= 1.3
+
+    def move(self):
+        if(self.state == "idle" or self.state == "running" or 
+           self.is_anim_finished()):
+            self.change_x(self.x + self.speed*self.dir)
+            if(self.speed == 0):
+                self.change_state("idle")
+            else:
+                self.change_state("running",self.dir)        
 
 class Enemy(Entity):
     def __init__(self,name,variant):
@@ -90,6 +112,9 @@ class Enemy(Entity):
         self.variant = variant
         super().__init__(name,variant,WIDTH//240 - 0.5)
         self.hitbox.width = self.hitbox.width//4
+        self.frame_speed["idle"] *= 1.1
+        self.frame_speed["attack1"] *= 0.7
+        self.frame_speed["attack2"] *= 0.7
 
     def go_to_player(self,player_x):
         self.speed = self.running_speed
