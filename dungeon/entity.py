@@ -39,10 +39,6 @@ class Entity(Actor):
         self.frame += self.frame_speed[self.state]
         if self.frame > self._no_frames[self.state] - 1:
             self.frame = 0
-            if(self.speed == 0):
-                self.change_state("idle")
-            else:
-                self.change_state("running",self.dir)
         self.image = f"{self.name}/{self.variant}/{self.state}/{round(self.frame)}"
         if self.dir == LEFT:
             self._orig_surf = transform.flip(self._orig_surf, True, False) 
@@ -104,7 +100,19 @@ class Player(Entity):
             if(self.speed == 0):
                 self.change_state("idle")
             else:
-                self.change_state("running",self.dir)        
+                self.change_state("running",self.dir)
+
+    def animate(self):
+        self.frame += self.frame_speed[self.state]
+        if self.frame > self._no_frames[self.state] - 1:
+            self.frame = 0
+            if(self.speed == 0):
+                self.change_state("idle")
+            else:
+                self.change_state("running",self.dir)
+        self.image = f"{self.name}/{self.variant}/{self.state}/{round(self.frame)}"
+        if self.dir == LEFT:
+            self._orig_surf = transform.flip(self._orig_surf, True, False)      
 
 class Enemy(Entity):
     def __init__(self,name,variant):
