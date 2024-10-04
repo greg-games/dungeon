@@ -117,7 +117,7 @@ class Entity(Actor):
 class Player(Entity):
     def __init__(self):
         super().__init__("player","variant_0",WIDTH//120 - 0.5,5, hitbox_width = 1/5, hitbox_offset = -1/5,
-                         duck = 0.4, idle = 0.6, running = 1.1, hit = 0.075)
+                         duck = 0.4, idle = 0.6, running = 1.1, hit = 0.073)
 
     def update_hitbox(self):
         if self.state == "jump":

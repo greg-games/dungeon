@@ -340,17 +340,16 @@ def maze_printable(func):
 @maze_printable
 def add_skeletons():
     room = maze.rooms[room_number]
-    if room.skeleton_is_allowed():
-        if room.has_closed_chest:
+    if room.has_closed_chest:
             room.no_skeletons += 1
             spawn_skeleton()
-        else:
-            if (random() < skeleton_chance(no_visited_rooms/maze.size)):
-                if (random() < 0.5 and not ("ladder" in room.tiles_names)):
-                    room.no_skeletons += 1
-                    spawn_skeleton()
-                room.no_skeletons += 1
-                spawn_skeleton()
+    elif (room.skeleton_is_allowed() and 
+          random() < skeleton_chance(no_visited_rooms/maze.size)) :
+        if (random() < 0.5 and not ("ladder" in room.tiles_names)):
+            room.no_skeletons += 1
+            spawn_skeleton()
+        room.no_skeletons += 1
+        spawn_skeleton()
 
 def spawn_skeleton():
     skeleton = Enemy("skeleton","variant_0")
