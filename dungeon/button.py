@@ -31,6 +31,7 @@ class Button(Actor):
                              "clicked":on_click[2],
                              "released":on_release[2]}
         self.mode = "unpressed"
+        self.can_interact = True
         self.name = name
         super().__init__(f"buttons/{name}")
         background = self._orig_surf.copy()
@@ -51,28 +52,34 @@ class Button(Actor):
         self.background.pos = pos
 
     def on_release(self,input):
-        if (self.mode != "unpressed"):
+        if (self.mode != "unpressed" and self.can_interact):
             self.mode = "unpressed"
+            self._orig_surf.set_alpha(255)
             if self._released != None:
                 return self._released(input)
 
     def on_click(self,mouse_hitbox,input):
-        if (iscolliding(mouse_hitbox, self.hitbox)
+        if (iscolliding(mouse_hitbox, self.hitbox) and self.can_interact
             and self.mode != "pressed"):
             self.mode = "pressed"
+            self._orig_surf.set_alpha(127)  
             if self._clicked != None:
                 return self._clicked(input)
 
     def on_unpress(self,input):
-        if (self.mode == "unpressed" and self._unpressed != None):
+        if (self.mode == "unpressed" and self._unpressed != None and self.can_interact):
             return self._unpressed(input)
-    
+
     def on_press(self,input):
-        if (self.mode == "pressed" and self._pressed != None):
+        if (self.mode == "pressed" and self._pressed != None and self.can_interact):
             return self._pressed(input)
-        
-    def update_button(self,mouse_hitbox):
-        if iscolliding(mouse_hitbox, self.hitbox):
-            self._orig_surf.set_alpha(127)  
-        else:
-            self._orig_surf.set_alpha(255)    
+
+    def hide(self):
+        self._orig_surf.set_alpha(0)
+        self.background._orig_surf.set_alpha(0)
+        self.can_interact = False
+
+    def show(self):
+        self._orig_surf.set_alpha(255)
+        self.background._orig_surf.set_alpha(255)
+        self.can_interact = True

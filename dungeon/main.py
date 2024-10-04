@@ -34,6 +34,8 @@ go_right = False
 go_up = False
 go_down = False
 
+show_hitboxes = False
+
 mazes = []
 
 TILE_FRAME_SPEED = 0.5
@@ -61,6 +63,7 @@ if is_in_browser():
     TILE_FRAME_SPEED = 1
 
 def make_buttons():
+    global duck_button, jump_button, attack_button, left_button, right_button, up_button, down_button
     duck_button = Button("duck",
                          on_click=(lambda a: player.change_state("duck") 
                                    if player.state == "idle" or player.state == "running" 
@@ -78,6 +81,7 @@ def make_buttons():
                                      if player.state == "idle" or player.state == "running"
                                      else None, "NO_VARIABLE", "NO_VARIABLE"))
     attack_button.set_pos((WIDTH-attack_button.width/2,HEIGHT-attack_button.height/2))
+    attack_button.hide()
 
     left_button = Button("left",
                          on_click=(lambda a: True, "NO_VARIABLE", "go_left"),
@@ -418,6 +422,11 @@ def realign_player():
             if (player.state == "running"):
                 player.change_state("idle")
             player.update_colliding()
+            if (thing.name == "skeleton" and thing.state == "idle" and
+                player.islookingat(thing) and player.state != "hit"):
+                attack_button.show()
+            else:
+                attack_button.hide()
             break
     if(player.x < player.hitbox.width/2 and maze.rooms[room_number].west() == 1):
         room_number -= 1
@@ -459,15 +468,9 @@ def entity_move():
                         sprite.update_colliding()
                     if (thing.name == "player"):
                         sprite.x -= sprite.speed*sprite.dir
-                        if (sprite.state == "running" or sprite.frame == 0):
-                            if (sprite.state != "idle" and sprite.state != "hit" and random() < 0.6):
-                                sprite.change_state("idle")
-                            elif random() < 0.5:
-                                sprite.change_state("attack1")
-                            else:
-                                sprite.change_state("attack2")
-                        sprite.speed = 0
-                        sprite.update_colliding()
+                        if thing.state == "hit":
+                            sprite.attack_progress = 1
+                        sprite.attack()
     player.move()
     realign_player()
 
@@ -522,11 +525,11 @@ def on_key_down():
     elif keyboard.down or keyboard.s:
         go_down = True
     if player.state == "idle":
-        if keyboard.lshift:
+        if keyboard.lshift and jump_button.can_interact:
             player.change_state("jump")
-        elif keyboard.lctrl:
+        elif keyboard.lctrl and duck_button.can_interact:
             player.change_state("duck")
-        elif keyboard.space:
+        elif keyboard.space and attack_button.can_interact:
             player.change_state("attack1")
 
 def on_mouse_up():
@@ -545,7 +548,6 @@ make_buttons()
 set_up_game()
 
 def draw():
-    show_hitboxes = False
     #show_hitboxes = True # for debugging only
     screen.clear()
     for sprite in all_sprites:
@@ -566,7 +568,6 @@ def update():
         pressing_up_or_down()
         change_player_speed()
         entity_move()
-        update_buttons()
         animate_tiles()
         animate_entities()  
         play_sounds()
