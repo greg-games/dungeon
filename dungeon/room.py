@@ -1,5 +1,3 @@
-from random import random
-
 symbols = {
 (1,1,1,1):"┼",
 (1,1,1,0):"┴",
@@ -23,6 +21,7 @@ class Room:
         self.exits = exits
         self.distance = distance
         self.tiles = tiles
+        self.tiles_names = [tile.name for tile in tiles]
         self.chests_in_range = 0
         self.is_chest_in_range = False
         self.has_closed_chest = False
@@ -61,3 +60,6 @@ class Room:
                 self.last_visited > 7)
     def animated_tile(self,i):
         return self.tiles[self.animated_tiles_indexes[i]]
+    def tiles_add(self,tile):
+        self.tiles.append(tile)
+        self.tiles_names.append(tile.name)

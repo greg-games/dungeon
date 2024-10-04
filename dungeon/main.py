@@ -12,7 +12,7 @@ from global_functions import iscolliding, is_in_browser
 from maze import Maze
 from room import Room
 from tile import Tile, AnimatedTile, Chest, Door
-from entity import Entity, Player, Enemy, all_entities
+from entity import Entity, Player, Enemy, all_entities, update_all_sprites
 from pgzero.actor import Actor
 from pgzero.loaders import sounds
 from button import Button, all_buttons, buttons_in, buttons_out
@@ -62,15 +62,21 @@ if is_in_browser():
 
 def make_buttons():
     duck_button = Button("duck",
-                         on_click=(lambda a: player.change_state("duck") if player.state == "idle" else None, "NO_VARIABLE", "NO_VARIABLE"))
+                         on_click=(lambda a: player.change_state("duck") 
+                                   if player.state == "idle" or player.state == "running" 
+                                   else None, "NO_VARIABLE", "NO_VARIABLE"))
     duck_button.set_pos((WIDTH-duck_button.width*5/2,HEIGHT-duck_button.height/2))
 
     jump_button = Button("jump",
-                         on_click=(lambda a: player.change_state("jump") if player.state == "idle" else None, "NO_VARIABLE", "NO_VARIABLE"))
+                         on_click=(lambda a: player.change_state("jump")
+                                   if player.state == "idle" or player.state == "running"
+                                   else None, "NO_VARIABLE", "NO_VARIABLE"))
     jump_button.set_pos((WIDTH-jump_button.width*3/2,HEIGHT-jump_button.height/2))
 
     attack_button = Button("attack",
-                           on_click=(lambda a: player.change_state("attack1") if player.state == "idle" else None, "NO_VARIABLE", "NO_VARIABLE"))
+                           on_click=(lambda a: player.change_state("attack1")
+                                     if player.state == "idle" or player.state == "running"
+                                     else None, "NO_VARIABLE", "NO_VARIABLE"))
     attack_button.set_pos((WIDTH-attack_button.width/2,HEIGHT-attack_button.height/2))
 
     left_button = Button("left",
@@ -143,6 +149,9 @@ def set_up_game():
     print(maze)
 
     player.change_x(WIDTH/2)
+    player.change_state("idle")
+    player.health = 5
+    player.is_dead = False
 
     player.colliding = []
 
@@ -171,13 +180,13 @@ def make_room_frame(i):
     ladder = Actor("ladder/variant_0")
     for x in range(WIDTH//brick.width - 2):
         for y in range(HEIGHT//brick.height - 2):
-            maze.rooms[i].tiles.append(Tile("background",NO_VARIANT,(brick.width*(x + 3/2), brick.height*(y + 3/2))))
+            maze.rooms[i].tiles_add(Tile("background",NO_VARIANT,(brick.width*(x + 3/2), brick.height*(y + 3/2))))
     y = 0
     for _ in range(2):
         x = 0
         for _ in range(2):
             for j in range((WIDTH - 1)//(2*brick.width)):
-                maze.rooms[i].tiles.append(Tile("brick",randint(0,7),(brick.width*(j + 1/2) + x, brick.height/2 + y)))
+                maze.rooms[i].tiles_add(Tile("brick",randint(0,7),(brick.width*(j + 1/2) + x, brick.height/2 + y)))
             x = WIDTH/2 + brick.width/2
         y = HEIGHT - brick.height
     if(maze.rooms[i].west() == 0):
@@ -185,13 +194,13 @@ def make_room_frame(i):
     else:
         name, variant = "background", NO_VARIANT
     for j in range(HEIGHT//brick.height - 2):
-        maze.rooms[i].tiles.append(Tile(name,variant,(brick.width/2 , brick.height * (3/2 + j))))
+        maze.rooms[i].tiles_add(Tile(name,variant,(brick.width/2 , brick.height * (3/2 + j))))
     
     if(maze.rooms[i].north() == 0):
-        maze.rooms[i].tiles.append(Tile("brick",randint(0,7),(WIDTH/2, brick.height/2)))
+        maze.rooms[i].tiles_add(Tile("brick",randint(0,7),(WIDTH/2, brick.height/2)))
     else:
-        maze.rooms[i].tiles.append(Tile("background",NO_VARIANT,(WIDTH/2, brick.height/2)))
-        maze.rooms[i].tiles.append(Tile("ladder",NO_VARIANT,(WIDTH/2, ladder.height/2)))
+        maze.rooms[i].tiles_add(Tile("background",NO_VARIANT,(WIDTH/2, brick.height/2)))
+        maze.rooms[i].tiles_add(Tile("ladder",NO_VARIANT,(WIDTH/2, ladder.height/2)))
         maze.rooms[i].north_ladder_index = len(maze.rooms[i].tiles) - 1
     
     if(maze.rooms[i].east() == 0):
@@ -199,13 +208,13 @@ def make_room_frame(i):
     else:
         name, variant = "background", NO_VARIANT
     for j in range(HEIGHT//brick.height - 2):
-        maze.rooms[i].tiles.append(Tile(name, variant,(WIDTH - brick.width/2, brick.height * (3/2 + j))))
+        maze.rooms[i].tiles_add(Tile(name, variant,(WIDTH - brick.width/2, brick.height * (3/2 + j))))
     
     if(maze.rooms[i].south() == 0):
-        maze.rooms[i].tiles.append(Tile("brick",randint(0,7),(WIDTH/2, HEIGHT - brick.height/2)))
+        maze.rooms[i].tiles_add(Tile("brick",randint(0,7),(WIDTH/2, HEIGHT - brick.height/2)))
     else:
-        maze.rooms[i].tiles.append(Tile("background",NO_VARIANT,(WIDTH/2, HEIGHT - brick.height/2)))
-        maze.rooms[i].tiles.append(Tile("ladder",NO_VARIANT,(WIDTH/2, HEIGHT)))
+        maze.rooms[i].tiles_add(Tile("background",NO_VARIANT,(WIDTH/2, HEIGHT - brick.height/2)))
+        maze.rooms[i].tiles_add(Tile("ladder",NO_VARIANT,(WIDTH/2, HEIGHT)))
         maze.rooms[i].south_ladder_index = len(maze.rooms[i].tiles) - 1
 
 def make_addons(i):
@@ -216,7 +225,7 @@ def make_addons(i):
         Addon("crack",0,3,100,("brick"),crack.width/2, WIDTH - crack.width/2, HEIGHT/10, HEIGHT*7/8)
     ]
     if(i == 0):
-        maze.rooms[i].tiles.append(Door("door",0,"closing",(WIDTH/2,HEIGHT - 120 - Actor("door/variant_0/closing/0").height/2)))
+        maze.rooms[i].tiles_add(Door("door",0,"closing",(WIDTH/2,HEIGHT - 120 - Actor("door/variant_0/closing/0").height/2)))
         maze.rooms[i].animated_tiles_indexes.append(len(maze.rooms[i].tiles) - 1)
         maze.rooms[i].tiles[-1].is_animating = True
     for addon in all_addons:
@@ -241,7 +250,7 @@ def make_addons(i):
                             break
                     counter += 1
                 if pos_avaible:
-                    maze.rooms[i].tiles.append(Tile(addon.name,variant,pos))
+                    maze.rooms[i].tiles_add(Tile(addon.name,variant,pos))
 
 def make_chests(i):
     global number_of_chests
@@ -252,7 +261,7 @@ def make_chests(i):
             x = WIDTH/4
         elif(maze.rooms[i].west() == 1):
             x = WIDTH*3/4
-        maze.rooms[i].tiles.append(Chest("chest",chest_type,x))
+        maze.rooms[i].tiles_add(Chest("chest",chest_type,x))
         maze.rooms[i].animated_tiles_indexes.append(len(maze.rooms[i].tiles) - 1)
         maze.rooms[i].has_closed_chest = True
 
@@ -274,7 +283,7 @@ def add_more_chests():
             if(maze.rooms[i].north() != 1 and maze.rooms[i].south() != 1):
                 x = WIDTH/2
             if(chest_type > 0): chest_type -= 1
-            maze.rooms[i].tiles.append(Chest("chest",chest_type,x))
+            maze.rooms[i].tiles_add(Chest("chest",chest_type,x))
             maze.rooms[i].animated_tiles_indexes.append(len(maze.rooms[i].tiles) - 1)
             maze.rooms[i].has_closed_chest = True
             number_of_chests += 1
@@ -297,6 +306,7 @@ def build_room(i):
     for enemy in maze.rooms[i].enemies:
         all_sprites.append(enemy)
     all_sprites.append(player)
+    update_all_sprites(all_sprites)
     for room in maze.rooms:
         room.last_visited += 1
     maze.rooms[i].last_visited = 0
@@ -332,15 +342,11 @@ def add_skeletons():
             spawn_skeleton()
         else:
             if (random() < skeleton_chance(no_visited_rooms/maze.size)):
-                if (random() < 0.5):
+                if (random() < 0.5 and not ("ladder" in room.tiles_names)):
                     room.no_skeletons += 1
                     spawn_skeleton()
                 room.no_skeletons += 1
                 spawn_skeleton()
-    # start of symulating fight
-    #if room.no_skeletons > 0:
-        #room.no_skeletons -= 1
-    # end of symulating fight
 
 def spawn_skeleton():
     skeleton = Enemy("skeleton","variant_0")
@@ -373,9 +379,13 @@ def change_player_speed():
         player.speed = player.running_speed
         if player.state == "running" or player.state == "idle":
             if(keyboard.left or keyboard.a or go_left):
+                if player.dir == RIGHT:
+                    player.x -= player.width/20
                 player.dir = LEFT
             else:
-                player.dir = RIGHT
+                if player.dir == LEFT:
+                    player.x += player.width/20
+                player.dir = RIGHT           
 
 def pressing_up_or_down():
     global room_number, go_down, go_up
@@ -401,13 +411,13 @@ def pressing_up_or_down():
 
 def realign_player():
     global room_number
-    player.update_colliding(all_sprites)
+    player.update_colliding()
     for thing in player.colliding:
-        if ((thing.name == "brick") or (thing.name == "skeleton" and player.islookingat(thing))):
+        if ((thing.name == "brick" or thing.name == "skeleton") and player.islookingat(thing)):
             player.change_x(player.x - player.speed*player.dir)
             if (player.state == "running"):
                 player.change_state("idle")
-            player.update_colliding(all_sprites)
+            player.update_colliding()
             break
     if(player.x < player.hitbox.width/2 and maze.rooms[room_number].west() == 1):
         room_number -= 1
@@ -421,37 +431,43 @@ def realign_player():
 def entity_move():
     for sprite in all_sprites:
         if isinstance(sprite,Enemy):
-            if (sprite.state == "running" or sprite.frame == 0):
-                if sprite.x > player.x:
-                    sprite.dir = LEFT
-                else:
-                    sprite.dir = RIGHT
-                sprite.update_colliding(all_sprites)
-                can_move = True
+            if sprite.is_dead:
+                all_sprites.remove(sprite)
+                maze.rooms[room_number].no_skeletons -= 1
+                if maze.rooms[room_number].has_closed_chest:
+                    open_chest(maze.rooms[room_number].tiles[maze.rooms[room_number].animated_tiles_indexes[0]])
+            else:
+                if (sprite.state == "running" or sprite.frame == 0):
+                    if sprite.x > player.x:
+                        sprite.dir = LEFT
+                    else:
+                        sprite.dir = RIGHT
+                    sprite.update_colliding()
+                    can_move = True
+                    for thing in sprite.colliding:
+                        if (thing.name == "player" or (thing.name == "skeleton" and sprite.islookingat(thing))):
+                            can_move = False
+                    if can_move:
+                        sprite.go_to_player(player.x)
+                        sprite.move()
+                sprite.update_colliding()
                 for thing in sprite.colliding:
-                    if (thing.name == "player" or (thing.name == "skeleton" and sprite.islookingat(thing))):
-                        can_move = False
-                if can_move:
-                    sprite.go_to_player(player.x)
-                    sprite.move()
-            sprite.update_colliding(all_sprites)
-            for thing in sprite.colliding:
-                if thing.name == "skeleton" and sprite.islookingat(thing):
-                    sprite.x -= sprite.speed*sprite.dir
-                    sprite.change_state("idle")
-                    sprite.speed = 0
-                    sprite.update_colliding(all_sprites)
-                if (thing.name == "player"):
-                    sprite.x -= sprite.speed*sprite.dir
-                    if (sprite.state == "running" or sprite.frame == 0):
-                        if (sprite.state != "idle" and random() < 0.4):
-                            sprite.change_state("idle")
-                        elif random() < 0.5:
-                            sprite.change_state("attack1")
-                        else:
-                            sprite.change_state("attack2")
-                    sprite.speed = 0
-                    sprite.update_colliding(all_sprites)
+                    if thing.name == "skeleton" and sprite.islookingat(thing):
+                        sprite.x -= sprite.speed*sprite.dir
+                        sprite.change_state("idle")
+                        sprite.speed = 0
+                        sprite.update_colliding()
+                    if (thing.name == "player"):
+                        sprite.x -= sprite.speed*sprite.dir
+                        if (sprite.state == "running" or sprite.frame == 0):
+                            if (sprite.state != "idle" and sprite.state != "hit" and random() < 0.6):
+                                sprite.change_state("idle")
+                            elif random() < 0.5:
+                                sprite.change_state("attack1")
+                            else:
+                                sprite.change_state("attack2")
+                        sprite.speed = 0
+                        sprite.update_colliding()
     player.move()
     realign_player()
 
@@ -479,10 +495,11 @@ def animate_tiles():
                     break
 
 def open_chest(chest):
+    global number_of_found_chests
     chest.is_animating = True
     number_of_found_chests += 1
     maze.rooms[room_number].has_closed_chest = False
-    sounds.load(tile.sound_path()).play()
+    sounds.load(chest.sound_path()).play()
 
 def play_sounds():
     for sound in player.all_sounds:
@@ -534,7 +551,8 @@ def draw():
     for sprite in all_sprites:
         sprite.draw()
         if (isinstance(sprite,Entity) and show_hitboxes):
-            screen.draw.rect(sprite.hitbox,"red",3)
+            screen.draw.rect(sprite.hitbox,"green",3)
+            screen.draw.rect(sprite.attack_hitbox,"red",3)
     player.draw()
     chest_icon.draw()
     for button in all_buttons:
@@ -543,6 +561,7 @@ def draw():
     screen.draw.text(str(number_of_found_chests) + "/" + str(number_of_chests), center = chest_icon.pos, color="yellow", fontsize=50)
 
 def update():
+    global game_ended
     if not game_ended:
         pressing_up_or_down()
         change_player_speed()
@@ -551,6 +570,9 @@ def update():
         animate_tiles()
         animate_entities()  
         play_sounds()
+        if player.is_dead:
+            game_ended = True
+            set_up_game()
 
 async def main():
     pgzrun.go()
