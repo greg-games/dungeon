@@ -81,7 +81,6 @@ def make_buttons():
                                      if player.state == "idle" or player.state == "running"
                                      else None, "NO_VARIABLE", "NO_VARIABLE"))
     attack_button.set_pos((WIDTH-attack_button.width/2,HEIGHT-attack_button.height/2))
-    attack_button.hide()
 
     left_button = Button("left",
                          on_click=(lambda a: True, "NO_VARIABLE", "go_left"),
@@ -158,6 +157,8 @@ def set_up_game():
     player.is_dead = False
 
     player.colliding = []
+
+    attack_button.hide()
 
     all_sprites = []
     room_number = 0
@@ -371,10 +372,8 @@ def skeleton_chance(x):
     return min(100*(2 ** (2*x -12)) + 0.22, 0.75)
 
 def update_buttons():
-    for button in all_buttons:
-        button.update_button(mouse_hitbox)
-        buttons_on("unpressed")
-        buttons_on("pressed")
+    buttons_on("unpressed")
+    buttons_on("pressed")
 
 def change_player_speed():
     player.speed = 0
@@ -567,6 +566,7 @@ def update():
         pressing_up_or_down()
         change_player_speed()
         entity_move()
+        update_buttons()
         animate_tiles()
         animate_entities()  
         play_sounds()
