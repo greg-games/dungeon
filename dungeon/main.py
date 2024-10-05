@@ -25,7 +25,7 @@ pygame.display.set_mode((WIDTH, HEIGHT))
 player = Player()
 player.pos = WIDTH/2,HEIGHT - 120 - player.height/2 
 
-chest_icon = Actor("chest icon/variant_0")
+chest_icon = Actor("ui/chest_icon")
 chest_icon.pos = (chest_icon.width,chest_icon.height)
 
 mouse_hitbox = Rect((0,0),(2, 2))
@@ -61,6 +61,10 @@ symbols2 = {
 if is_in_browser():
     player.running_speed *= 1.75
     TILE_FRAME_SPEED = 1
+    #chrome_options = Options()
+    #chrome_options.add_argument("--disable-infobars") # removes a warning
+    #chrome_options.add_argument("--kiosk")#open in full screen
+    #chrome_options.add_argument("--app=https://greg-games.github.io/dungeon")
 
 def make_buttons():
     global duck_button, jump_button, attack_button, left_button, right_button, up_button, down_button
@@ -181,8 +185,8 @@ def make_tiles():
     add_more_chests()
 
 def make_room_frame(i):
-    brick = Actor("brick/variant_0")
-    ladder = Actor("ladder/variant_0")
+    brick = Actor("tiles/brick/variant_0")
+    ladder = Actor("tiles/ladder/variant_0")
     for x in range(WIDTH//brick.width - 2):
         for y in range(HEIGHT//brick.height - 2):
             maze.rooms[i].tiles_add(Tile("background",NO_VARIANT,(brick.width*(x + 3/2), brick.height*(y + 3/2))))
@@ -223,14 +227,14 @@ def make_room_frame(i):
         maze.rooms[i].south_ladder_index = len(maze.rooms[i].tiles) - 1
 
 def make_addons(i):
-    crack = Actor("crack/variant_0")
+    crack = Actor("tiles/crack/variant_0")
     all_addons = [ #(name, number of variants, max number on screan, min distance, can_collide, x start, x end, y start, y end)
         Addon("torch",0,2,200,("background"),WIDTH/10, WIDTH*9/10, HEIGHT/2, HEIGHT/2),
         Addon("crack",0,3,100,("background"),crack.width/2, WIDTH - crack.width/2, HEIGHT/10, HEIGHT*7/8),
         Addon("crack",0,3,100,("brick"),crack.width/2, WIDTH - crack.width/2, HEIGHT/10, HEIGHT*7/8)
     ]
     if(i == 0):
-        maze.rooms[i].tiles_add(Door("door",0,"closing",(WIDTH/2,HEIGHT - 120 - Actor("door/variant_0/closing/0").height/2)))
+        maze.rooms[i].tiles_add(Door("door",0,"closing",(WIDTH/2,HEIGHT - 120 - Actor("tiles/door/variant_0/closing/0").height/2)))
         maze.rooms[i].animated_tiles_indexes.append(len(maze.rooms[i].tiles) - 1)
         maze.rooms[i].tiles[-1].is_animating = True
     for addon in all_addons:

@@ -32,10 +32,10 @@ class Entity(Actor):
         self.colliding = []
         self.attacking = []
         self.is_dead = False
-        self._no_frames = {a:len(os.listdir(f"images/{self.name}/{self.variant}/{a}")) for a in os.listdir(f"images/{self.name}/{self.variant}")}
-        self.frame_speed = {a:ENTITY_FRAME_SPEED for a in os.listdir(f"images/{self.name}/{self.variant}")}
+        self._no_frames = {a:len(os.listdir(f"images/entities/{self.name}/{self.variant}/{a}")) for a in os.listdir(f"images/entities/{self.name}/{self.variant}")}
+        self.frame_speed = {a:ENTITY_FRAME_SPEED for a in os.listdir(f"images/entities/{self.name}/{self.variant}")}
         self.frame = randrange(0,self._no_frames["idle"])
-        super().__init__(f"{self.name}/{self.variant}/idle/0")
+        super().__init__(f"entities/{self.name}/{self.variant}/idle/0")
         self._hitbox_width = self.width * hitbox_width
         self._hitbox_height = self.height * hitbox_height
         self.hitbox_offset = hitbox_offset * self._hitbox_width
@@ -56,7 +56,7 @@ class Entity(Actor):
                 self.is_dead = True
                 all_entities.remove(self)
                 return
-        self.image = f"{self.name}/{self.variant}/{self.state}/{round(self.frame)}"
+        self.image = f"entities/{self.name}/{self.variant}/{self.state}/{round(self.frame)}"
         if self.dir == LEFT:
             self._orig_surf = transform.flip(self._orig_surf, True, False) 
 

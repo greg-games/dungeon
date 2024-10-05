@@ -8,7 +8,7 @@ class Tile:
         self.variant = variant
         self.pos = pos
     def image(self):
-        return f"{self.name}/variant_{self.variant}"
+        return f"tiles/{self.name}/variant_{self.variant}"
 
 triggers ={
     "chest":"click",
@@ -19,7 +19,7 @@ class AnimatedTile(Tile):
     def __init__(self, name:str, variant:int, state:str, pos:tuple):
         self.state = state
         self.frame = 0
-        self.no_frames = {s:len(os.listdir(f"images/{name}/variant_{variant}/{s}")) for s in os.listdir(f"images/{name}/variant_{variant}")}
+        self.no_frames = {s:len(os.listdir(f"images/tiles/{name}/variant_{variant}/{s}")) for s in os.listdir(f"images/tiles/{name}/variant_{variant}")}
         self.triger = triggers[name]
         if self.triger == "always":
             self.is_animating = True
@@ -28,7 +28,7 @@ class AnimatedTile(Tile):
         self.has_finished_animating = False
         super().__init__(name, variant, pos)
     def image(self):
-        return f"{self.name}/variant_{self.variant}/{self.state}/{round(self.frame)}"
+        return f"tiles/{self.name}/variant_{self.variant}/{self.state}/{round(self.frame)}"
     def next_frame(self,frame_speed):
         if self.is_animating:
             if self.frame < self.no_frames[self.state] - 1:
@@ -40,8 +40,8 @@ class AnimatedTile(Tile):
     
 class Chest(AnimatedTile):
     def __init__(self, name:str, variant:int, x:int):
-        self.bottom = HEIGHT - Actor("brick/variant_0").height
-        super().__init__(name, variant, "opening", (x,self.bottom - Actor("chest/variant_0/opening/0").height/2))
+        self.bottom = HEIGHT - Actor("tiles/brick/variant_0").height
+        super().__init__(name, variant, "opening", (x,self.bottom - Actor("tiles/chest/variant_0/opening/0").height/2))
     
     def sound_path(self):
         return f"chest/{self.variant}"

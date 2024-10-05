@@ -33,10 +33,10 @@ class Button(Actor):
         self.mode = "unpressed"
         self.can_interact = True
         self.name = name
-        super().__init__(f"buttons/{name}")
+        super().__init__(f"ui/buttons/{name}")
         background = self._orig_surf.copy()
         color_surface(background,200,200,200)
-        self.background = Actor(f"buttons/{name}")
+        self.background = Actor(f"ui/buttons/{name}")
         self.background._orig_surf = background
         self.__hitbox_width = self.width
         self.__hitbox_height = self.height
