@@ -12,7 +12,7 @@ all_sprites = []
 ENTITY_FRAME_SPEED = 0.2
 
 if is_in_browser():
-    ENTITY_FRAME_SPEED = 0.5
+    ENTITY_FRAME_SPEED = 0.6
 
 #@staticmethod
 def update_all_sprites(new_all_sprites):
@@ -60,11 +60,19 @@ class Entity(Actor):
         if self.dir == LEFT:
             self._orig_surf = transform.flip(self._orig_surf, True, False) 
 
+    def update_hitboxes(self):
+        self.hitbox.topleft = (self.x - self.hitbox.width/2 + self.hitbox_offset*self.dir,
+                                self.y - self.hitbox.height/2)
+        self.attack_hitbox.topleft = (self.x - self.hitbox.width*(0.5 - self.dir) + self.hitbox_offset*self.dir,
+                                       self.y - self.hitbox.height/2)
+
     def change_state(self,state,dir = None):
-        if dir != None: self.dir = dir
+        if dir != None:
+            self.dir = dir
         if self.state != state:
             self.frame = 0
             self.state = state
+            self.update_hitboxes()
             self.toggle_sound("running",["running"])
             if state == "hit":
                 self.health -= 1
@@ -80,10 +88,7 @@ class Entity(Actor):
 
     def change_x(self,x):
         self.x = x
-        self.hitbox.topleft = (self.x - self.hitbox.width/2 + self.hitbox_offset*self.dir,
-                                self.y - self.hitbox.height/2)
-        self.attack_hitbox.topleft = (self.x - self.hitbox.width*(0.5 - self.dir) + self.hitbox_offset*self.dir,
-                                       self.y - self.hitbox.height/2)
+        self.update_hitboxes()
 
     def update_colliding(self):
         self.colliding = []
@@ -119,7 +124,8 @@ class Player(Entity):
         super().__init__("player","variant_0",SCENE_WIDTH//120 - 0.5,5, hitbox_width = 1/5, hitbox_offset = -1/5,
                          duck = 0.4, idle = 0.6, running = 1.1, hit = 0.073)
 
-    def update_hitbox(self):
+    def update_hitboxes(self):
+        super().update_hitboxes()
         if self.state == "jump":
             self.hitbox.height =self._hitbox_height*3/5
             self.hitbox.top = self.top
@@ -131,13 +137,9 @@ class Player(Entity):
             self.hitbox.bottom = self.bottom
 
     def move(self):
-        self.update_hitbox()
+        self.update_hitboxes()
         if(self.state == "idle" or self.state == "running"):
             super().move()
-
-    def change_x(self,x):
-        super().change_x(x)
-        self.update_hitbox()
 
     def animate(self):
         if(self.frame + self.frame_speed[self.state] > self._no_frames[self.state] - 1):
@@ -153,15 +155,15 @@ class Player(Entity):
         if(self.state == "attack1"and
             (round(self.frame) >= self._no_frames[self.state]-3)):
             for object in self.attacking:
-                if object.name == "skeleton" and object.state == "idle":
-                    object.change_state("hit")
+                if object.name == "skeleton":
+                    object.change_state("hit")                  
 
 class Enemy(Entity):
     def __init__(self,name,variant):
         self.name = name
         self.variant = variant
         super().__init__(name,variant,SCENE_WIDTH//240,3, hitbox_offset = -1/3,
-                         idle = 1.1, attack1 = 0.8, attack2 = 0.8, hit = 0.75, hitbox_width = 1/2)
+                         idle = 1.1, attack1 = 0.9, attack2 = 0.85, hit = 0.75, hitbox_width = 1/2)
         self.attack_progress = 1
 
     def go_to_player(self,player_x):
@@ -171,19 +173,18 @@ class Enemy(Entity):
         else:
             self.dir = RIGHT
     
-    def change_state(self,state,dir = None):
-        if state != self.state:
-            if(state == "attack1" or state == "attack2"):
-                if state == "attack1":
-                    self.attack_hitbox.height = self._hitbox_height/3
-                    self.attack_hitbox.top = self.top + self._hitbox_height/6
-                else:
-                    self.attack_hitbox.height = self._hitbox_height/3
-                    self.attack_hitbox.bottom = self.bottom - self._hitbox_height/6
+    def update_hitboxes(self):
+        super().update_hitboxes()
+        if(self.state == "attack1" or self.state == "attack2"):
+            if self.state == "attack1":
+                self.attack_hitbox.height = self._hitbox_height/3
+                self.attack_hitbox.top = self.top + self._hitbox_height/6
             else:
-                self.attack_hitbox.height = self._hitbox_height
-                self.attack_hitbox.bottom = self.bottom
-        super().change_state(state, dir)
+                self.attack_hitbox.height = self._hitbox_height/3
+                self.attack_hitbox.bottom = self.bottom - self._hitbox_height/6
+        else:
+            self.attack_hitbox.height = self._hitbox_height
+            self.attack_hitbox.bottom = self.bottom
     
     def animate(self):
         super().animate()

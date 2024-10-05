@@ -345,9 +345,9 @@ def maze_printable(func):
 @maze_printable
 def add_skeletons():
     room = maze.rooms[room_number]
-    if room.has_closed_chest:
-            room.no_skeletons += 1
-            spawn_skeleton()
+    if room.has_closed_chest and room.no_skeletons == 0:
+        room.no_skeletons += 1
+        spawn_skeleton()
     elif (room.skeleton_is_allowed() and 
           random() < skeleton_chance(no_visited_rooms/maze.size)) :
         if (random() < 0.5 and not ("ladder" in room.tiles_names)):
@@ -373,11 +373,18 @@ def spawn_skeleton():
         maze.rooms[room_number].enemies.append(skeleton)
 
 def skeleton_chance(x):
-    return min(100*(2 ** (2*x -12)) + 0.22, 0.75)
+    return min(2**(2*(x-3)) + 0.075, 0.75)
 
 def update_buttons():
     buttons_on("unpressed")
     buttons_on("pressed")
+    for thing in player.attacking:
+        if (thing.name == "skeleton" and thing.state == "idle" and
+            player.state != "hit" and  player.state != "die"):
+            attack_button.show()
+            break
+        else:
+            attack_button.hide()
 
 def change_player_speed():
     player.speed = 0
@@ -424,11 +431,6 @@ def realign_player():
             if (player.state == "running"):
                 player.change_state("idle")
             player.update_colliding()
-            if (thing.name == "skeleton" and thing.state == "idle" and
-                player.islookingat(thing) and player.state != "hit"):
-                attack_button.show()
-            else:
-                attack_button.hide()
             break
     if(player.x < player.hitbox.width/2 and maze.rooms[room_number].west() == 1):
         room_number -= 1
@@ -477,8 +479,10 @@ def entity_move():
     realign_player()
 
 def animate_entities():
-    for entity in all_entities:
-        entity.animate()
+    player.animate()
+    for sprite in all_sprites:
+        if isinstance(sprite,Enemy):
+            sprite.animate()
 
 def animate_tiles():
     for i in range(len(maze.rooms[room_number].tiles)):
@@ -549,17 +553,21 @@ load_mazes()
 make_buttons()
 set_up_game()
 
+#show_hitboxes = True # for debugging only
 def draw():
-    #show_hitboxes = True # for debugging only
     screen.clear()
     screen.fill((58,58,58))
     for sprite in all_sprites:
         sprite.x += UI_BAR_WIDTH
         sprite.draw()
-        if (isinstance(sprite,Entity) and show_hitboxes):
+        sprite.x -= UI_BAR_WIDTH
+        if isinstance(sprite,Entity) and show_hitboxes:
+            sprite.hitbox.x += UI_BAR_WIDTH
+            sprite.attack_hitbox.x += UI_BAR_WIDTH
             screen.draw.rect(sprite.hitbox,"green",3)
             screen.draw.rect(sprite.attack_hitbox,"red",3)
-        sprite.x -= UI_BAR_WIDTH
+            sprite.hitbox.x -= UI_BAR_WIDTH
+            sprite.attack_hitbox.x -= UI_BAR_WIDTH
     player.x += UI_BAR_WIDTH
     player.draw()
     player.x -= UI_BAR_WIDTH
