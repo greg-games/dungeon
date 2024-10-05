@@ -7,8 +7,10 @@ EAST = 2
 SOUTH = 3
 #pgzero parameters
 TITLE = "Greg Games - Dungeon"
-WIDTH = 9*120
 HEIGHT = 5*120
+SCENE_WIDTH = 9*120
+UI_BAR_WIDTH = 360
+WIDTH = UI_BAR_WIDTH + SCENE_WIDTH + UI_BAR_WIDTH
 #player state
 IDLE = 0
 RIGHT = 1

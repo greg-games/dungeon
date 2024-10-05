@@ -2,7 +2,7 @@ from pgzero.actor import Actor
 from pgzero.rect import Rect
 from random import randrange, random
 import os
-from constants import LEFT, RIGHT, SOUND_NOT_PLAYING, SOUND_WILL_BE_PLAYED, WIDTH
+from constants import LEFT, RIGHT, SOUND_NOT_PLAYING, SOUND_WILL_BE_PLAYED, SCENE_WIDTH
 from global_functions import iscolliding, is_in_browser
 from pygame import transform
 
@@ -116,7 +116,7 @@ class Entity(Actor):
 
 class Player(Entity):
     def __init__(self):
-        super().__init__("player","variant_0",WIDTH//120 - 0.5,5, hitbox_width = 1/5, hitbox_offset = -1/5,
+        super().__init__("player","variant_0",SCENE_WIDTH//120 - 0.5,5, hitbox_width = 1/5, hitbox_offset = -1/5,
                          duck = 0.4, idle = 0.6, running = 1.1, hit = 0.073)
 
     def update_hitbox(self):
@@ -160,8 +160,8 @@ class Enemy(Entity):
     def __init__(self,name,variant):
         self.name = name
         self.variant = variant
-        super().__init__(name,variant,WIDTH//240,3, hitbox_offset = -1/3,
-                         idle = 1.1, attack1 = 0.75, attack2 = 0.75, hit = 0.75, hitbox_width = 1/2)
+        super().__init__(name,variant,SCENE_WIDTH//240,3, hitbox_offset = -1/3,
+                         idle = 1.1, attack1 = 0.8, attack2 = 0.8, hit = 0.75, hitbox_width = 1/2)
         self.attack_progress = 1
 
     def go_to_player(self,player_x):

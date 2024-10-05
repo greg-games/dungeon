@@ -7,7 +7,7 @@ import pygame.surfarray
 from pgzero.rect import Rect
 from random import *
 from addon import Addon
-from constants import NO_VARIANT, HEIGHT, WIDTH, LEFT, RIGHT, TITLE, SOUND_NOT_PLAYING, SOUND_WILL_BE_PLAYED, SOUND_IS_PLAYING, NO_VARIABLE
+from constants import NO_VARIANT, HEIGHT, WIDTH, SCENE_WIDTH, UI_BAR_WIDTH, LEFT, RIGHT, TITLE, SOUND_NOT_PLAYING, SOUND_WILL_BE_PLAYED, SOUND_IS_PLAYING, NO_VARIABLE
 from global_functions import iscolliding, is_in_browser
 from maze import Maze
 from room import Room
@@ -23,7 +23,7 @@ game_ended = False
 
 pygame.display.set_mode((WIDTH, HEIGHT))
 player = Player()
-player.pos = WIDTH/2,HEIGHT - 120 - player.height/2 
+player.pos = SCENE_WIDTH/2,HEIGHT - 120 - player.height/2 
 
 chest_icon = Actor("ui/chest_icon")
 chest_icon.pos = (chest_icon.width,chest_icon.height)
@@ -72,37 +72,37 @@ def make_buttons():
                          on_click=(lambda a: player.change_state("duck") 
                                    if player.state == "idle" or player.state == "running" 
                                    else None, "NO_VARIABLE", "NO_VARIABLE"))
-    duck_button.set_pos((WIDTH-duck_button.width*5/2,HEIGHT-duck_button.height/2))
+    duck_button.set_pos((WIDTH-duck_button.width,HEIGHT/2+duck_button.height/2))
 
     jump_button = Button("jump",
                          on_click=(lambda a: player.change_state("jump")
                                    if player.state == "idle" or player.state == "running"
                                    else None, "NO_VARIABLE", "NO_VARIABLE"))
-    jump_button.set_pos((WIDTH-jump_button.width*3/2,HEIGHT-jump_button.height/2))
+    jump_button.set_pos((WIDTH-jump_button.width,HEIGHT/2-jump_button.height/2))
 
     attack_button = Button("attack",
                            on_click=(lambda a: player.change_state("attack1")
                                      if player.state == "idle" or player.state == "running"
                                      else None, "NO_VARIABLE", "NO_VARIABLE"))
-    attack_button.set_pos((WIDTH-attack_button.width/2,HEIGHT-attack_button.height/2))
+    attack_button.set_pos((WIDTH-attack_button.width*2,HEIGHT/2))
 
     left_button = Button("left",
                          on_click=(lambda a: True, "NO_VARIABLE", "go_left"),
                          on_release=(lambda a: False, "NO_VARIABLE", "go_left"))
-    left_button.set_pos((left_button.width/2,HEIGHT-left_button.height))
+    left_button.set_pos((left_button.width/2,HEIGHT/2))
 
     right_button = Button("right",
                           on_click=(lambda a: True, "NO_VARIABLE", "go_right"),
                           on_release=(lambda a: False, "NO_VARIABLE", "go_right"))
-    right_button.set_pos((right_button.width*5/2,HEIGHT-right_button.height))
+    right_button.set_pos((right_button.width*5/2,HEIGHT/2))
 
     up_button = Button("up",
                        on_click=(lambda a: not go_down, "NO_VARIABLE", "go_up"))
-    up_button.set_pos((up_button.width*3/2,HEIGHT-up_button.height*3/2))
+    up_button.set_pos((up_button.width*3/2,HEIGHT/2-up_button.height))
 
     down_button = Button("down",
                          on_click=(lambda a: not go_up, "NO_VARIABLE", "go_down"))
-    down_button.set_pos((down_button.width*3/2,HEIGHT-down_button.height/2))
+    down_button.set_pos((down_button.width*3/2,HEIGHT/2+down_button.height))
 
 def buttons_on(event):
     for button in all_buttons:
@@ -155,7 +155,7 @@ def set_up_game():
         maze = mazes[maze_number]
     print(maze)
 
-    player.change_x(WIDTH/2)
+    player.change_x(SCENE_WIDTH/2)
     player.change_state("idle")
     player.health = 5
     player.is_dead = False
@@ -187,16 +187,16 @@ def make_tiles():
 def make_room_frame(i):
     brick = Actor("tiles/brick/variant_0")
     ladder = Actor("tiles/ladder/variant_0")
-    for x in range(WIDTH//brick.width - 2):
+    for x in range(SCENE_WIDTH//brick.width - 2):
         for y in range(HEIGHT//brick.height - 2):
             maze.rooms[i].tiles_add(Tile("background",NO_VARIANT,(brick.width*(x + 3/2), brick.height*(y + 3/2))))
     y = 0
     for _ in range(2):
         x = 0
         for _ in range(2):
-            for j in range((WIDTH - 1)//(2*brick.width)):
+            for j in range((SCENE_WIDTH - 1)//(2*brick.width)):
                 maze.rooms[i].tiles_add(Tile("brick",randint(0,7),(brick.width*(j + 1/2) + x, brick.height/2 + y)))
-            x = WIDTH/2 + brick.width/2
+            x = SCENE_WIDTH/2 + brick.width/2
         y = HEIGHT - brick.height
     if(maze.rooms[i].west() == 0):
         name, variant = "brick", randint(0,7)
@@ -206,10 +206,10 @@ def make_room_frame(i):
         maze.rooms[i].tiles_add(Tile(name,variant,(brick.width/2 , brick.height * (3/2 + j))))
     
     if(maze.rooms[i].north() == 0):
-        maze.rooms[i].tiles_add(Tile("brick",randint(0,7),(WIDTH/2, brick.height/2)))
+        maze.rooms[i].tiles_add(Tile("brick",randint(0,7),(SCENE_WIDTH/2, brick.height/2)))
     else:
-        maze.rooms[i].tiles_add(Tile("background",NO_VARIANT,(WIDTH/2, brick.height/2)))
-        maze.rooms[i].tiles_add(Tile("ladder",NO_VARIANT,(WIDTH/2, ladder.height/2)))
+        maze.rooms[i].tiles_add(Tile("background",NO_VARIANT,(SCENE_WIDTH/2, brick.height/2)))
+        maze.rooms[i].tiles_add(Tile("ladder",NO_VARIANT,(SCENE_WIDTH/2, ladder.height/2)))
         maze.rooms[i].north_ladder_index = len(maze.rooms[i].tiles) - 1
     
     if(maze.rooms[i].east() == 0):
@@ -217,24 +217,24 @@ def make_room_frame(i):
     else:
         name, variant = "background", NO_VARIANT
     for j in range(HEIGHT//brick.height - 2):
-        maze.rooms[i].tiles_add(Tile(name, variant,(WIDTH - brick.width/2, brick.height * (3/2 + j))))
+        maze.rooms[i].tiles_add(Tile(name, variant,(SCENE_WIDTH - brick.width/2, brick.height * (3/2 + j))))
     
     if(maze.rooms[i].south() == 0):
-        maze.rooms[i].tiles_add(Tile("brick",randint(0,7),(WIDTH/2, HEIGHT - brick.height/2)))
+        maze.rooms[i].tiles_add(Tile("brick",randint(0,7),(SCENE_WIDTH/2, HEIGHT - brick.height/2)))
     else:
-        maze.rooms[i].tiles_add(Tile("background",NO_VARIANT,(WIDTH/2, HEIGHT - brick.height/2)))
-        maze.rooms[i].tiles_add(Tile("ladder",NO_VARIANT,(WIDTH/2, HEIGHT)))
+        maze.rooms[i].tiles_add(Tile("background",NO_VARIANT,(SCENE_WIDTH/2, HEIGHT - brick.height/2)))
+        maze.rooms[i].tiles_add(Tile("ladder",NO_VARIANT,(SCENE_WIDTH/2, HEIGHT)))
         maze.rooms[i].south_ladder_index = len(maze.rooms[i].tiles) - 1
 
 def make_addons(i):
     crack = Actor("tiles/crack/variant_0")
     all_addons = [ #(name, number of variants, max number on screan, min distance, can_collide, x start, x end, y start, y end)
-        Addon("torch",0,2,200,("background"),WIDTH/10, WIDTH*9/10, HEIGHT/2, HEIGHT/2),
-        Addon("crack",0,3,100,("background"),crack.width/2, WIDTH - crack.width/2, HEIGHT/10, HEIGHT*7/8),
-        Addon("crack",0,3,100,("brick"),crack.width/2, WIDTH - crack.width/2, HEIGHT/10, HEIGHT*7/8)
+        Addon("torch",0,2,200,("background"),SCENE_WIDTH/10, SCENE_WIDTH*9/10, HEIGHT/2, HEIGHT/2),
+        Addon("crack",0,3,100,("background"),crack.width/2, SCENE_WIDTH - crack.width/2, HEIGHT/10, HEIGHT*7/8),
+        Addon("crack",0,3,100,("brick"),crack.width/2, SCENE_WIDTH - crack.width/2, HEIGHT/10, HEIGHT*7/8)
     ]
     if(i == 0):
-        maze.rooms[i].tiles_add(Door("door",0,"closing",(WIDTH/2,HEIGHT - 120 - Actor("tiles/door/variant_0/closing/0").height/2)))
+        maze.rooms[i].tiles_add(Door("door",0,"closing",(SCENE_WIDTH/2,HEIGHT - 120 - Actor("tiles/door/variant_0/closing/0").height/2)))
         maze.rooms[i].animated_tiles_indexes.append(len(maze.rooms[i].tiles) - 1)
         maze.rooms[i].tiles[-1].is_animating = True
     for addon in all_addons:
@@ -265,11 +265,11 @@ def make_chests(i):
     global number_of_chests
     if(maze.rooms[i].no_of_exits() == 1 and i != 0):
         chest_type = maze.rooms[i].chest_type()
-        x = WIDTH*(randint(0,1)*2+1)/4
+        x = SCENE_WIDTH*(randint(0,1)*2+1)/4
         if(maze.rooms[i].east() == 1):
-            x = WIDTH/4
+            x = SCENE_WIDTH/4
         elif(maze.rooms[i].west() == 1):
-            x = WIDTH*3/4
+            x = SCENE_WIDTH*3/4
         maze.rooms[i].tiles_add(Chest("chest",chest_type,x))
         maze.rooms[i].animated_tiles_indexes.append(len(maze.rooms[i].tiles) - 1)
         maze.rooms[i].has_closed_chest = True
@@ -288,9 +288,9 @@ def add_more_chests():
         max_allowed_distance = randrange(maze.size)
         if(maze.rooms[i].chest_is_allowed(max_allowed_distance)):
             chest_type = maze.rooms[i].chest_type()
-            x = WIDTH*(randint(0,1)*2+1)/4
+            x = SCENE_WIDTH*(randint(0,1)*2+1)/4
             if(maze.rooms[i].north() != 1 and maze.rooms[i].south() != 1):
-                x = WIDTH/2
+                x = SCENE_WIDTH/2
             if(chest_type > 0): chest_type -= 1
             maze.rooms[i].tiles_add(Chest("chest",chest_type,x))
             maze.rooms[i].animated_tiles_indexes.append(len(maze.rooms[i].tiles) - 1)
@@ -360,7 +360,7 @@ def spawn_skeleton():
     skeleton = Enemy("skeleton","variant_0")
     skeleton.y = HEIGHT - 120 - skeleton.height/2
     for _ in range(1000):
-        x = WIDTH/2 + (WIDTH/4-30)*(2*randint(0,1)-1)+randint(-(WIDTH)/4+150,(WIDTH)/4-150)
+        x = SCENE_WIDTH/2 + (SCENE_WIDTH/4-30)*(2*randint(0,1)-1)+randint(-(SCENE_WIDTH)/4+150,(SCENE_WIDTH)/4-150)
         skeleton.change_x(x)
         can_spawn = True
         for enemy in maze.rooms[room_number].enemies:
@@ -432,9 +432,9 @@ def realign_player():
             break
     if(player.x < player.hitbox.width/2 and maze.rooms[room_number].west() == 1):
         room_number -= 1
-        player.change_x(WIDTH - player.hitbox.width/2)
+        player.change_x(SCENE_WIDTH - player.hitbox.width/2)
         build_room(room_number)
-    elif(player.x > WIDTH - player.hitbox.width/2 and maze.rooms[room_number].east() == 1):
+    elif(player.x > SCENE_WIDTH - player.hitbox.width/2 and maze.rooms[room_number].east() == 1):
         room_number += 1
         player.change_x(player.hitbox.width/2)
         build_room(room_number)
@@ -552,12 +552,17 @@ set_up_game()
 def draw():
     #show_hitboxes = True # for debugging only
     screen.clear()
+    screen.fill((58,58,58))
     for sprite in all_sprites:
+        sprite.x += UI_BAR_WIDTH
         sprite.draw()
         if (isinstance(sprite,Entity) and show_hitboxes):
             screen.draw.rect(sprite.hitbox,"green",3)
             screen.draw.rect(sprite.attack_hitbox,"red",3)
+        sprite.x -= UI_BAR_WIDTH
+    player.x += UI_BAR_WIDTH
     player.draw()
+    player.x -= UI_BAR_WIDTH
     chest_icon.draw()
     for button in all_buttons:
             button.background.draw()
