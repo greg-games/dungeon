@@ -12,7 +12,8 @@ from global_functions import iscolliding, is_in_browser
 from maze import Maze
 from room import Room
 from tile import Tile, AnimatedTile, Chest, Door
-from entity import Entity, Player, Enemy, all_entities, update_all_sprites
+from entity import Entity, Player, Enemy, update_all_sprites
+from loot import Loot
 from pgzero.actor import Actor
 from pgzero.loaders import sounds
 from button import Button, all_buttons, buttons_in, buttons_out
@@ -25,14 +26,26 @@ pygame.display.set_mode((WIDTH, HEIGHT))
 player = Player()
 player.pos = SCENE_WIDTH/2,HEIGHT - 120 - player.height/2 
 
+loot_icons = []
+hearts = []
+
 chest_icon = Actor("ui/chest_icon")
-chest_icon.pos = (chest_icon.width,chest_icon.height)
+chest_icon.pos = (UI_BAR_WIDTH/2,chest_icon.height)
 
 mouse_hitbox = Rect((0,0),(2, 2))
 go_left = False
 go_right = False
 go_up = False
 go_down = False
+
+all_loot = []
+
+loot_collected = {
+    "crystal_violet":0,
+    "crystal_green":0,
+    "crystal_red":0,
+    "coin":0
+}
 
 show_hitboxes = False
 
@@ -66,6 +79,25 @@ if is_in_browser():
     #chrome_options.add_argument("--kiosk")#open in full screen
     #chrome_options.add_argument("--app=https://greg-games.github.io/dungeon")
 
+def make_ui():
+    pos = [(-2.5,1),(2,1),(-1.5,3),(1,3)]
+    for (i, key) in enumerate(loot_collected.keys()):
+        x,y = pos[i]
+        loot_icon = Actor(f"ui/{key}_icon")
+        loot_icon.pos = (UI_BAR_WIDTH/2 + loot_icon.width*x,loot_icon.height*y)
+        loot_icon.name = key
+        loot_icons.append(loot_icon)
+    x = WIDTH - (UI_BAR_WIDTH*4/5) - 30
+    for _ in range(5):
+        heart = Actor(f"ui/heart")
+        heart.lost = Actor(f"ui/lost_heart")
+        heart.name = "heart"
+        heart.pos = (x, heart.height * 1.5)
+        heart.lost.pos = heart.pos
+        x += UI_BAR_WIDTH/5
+        hearts.append(heart)
+    make_buttons()
+
 def make_buttons():
     global duck_button, jump_button, attack_button, left_button, right_button, up_button, down_button
     duck_button = Button("duck",
@@ -85,24 +117,26 @@ def make_buttons():
                                      if player.state == "idle" or player.state == "running"
                                      else None, "NO_VARIABLE", "NO_VARIABLE"))
     attack_button.set_pos((WIDTH-attack_button.width*2,HEIGHT/2))
+    
+    move_button_center = (Actor("ui/buttons/left").width*3/2,HEIGHT - Actor("ui/buttons/left").height*3/2)
 
     left_button = Button("left",
                          on_click=(lambda a: True, "NO_VARIABLE", "go_left"),
                          on_release=(lambda a: False, "NO_VARIABLE", "go_left"))
-    left_button.set_pos((left_button.width/2,HEIGHT/2))
+    left_button.set_pos((move_button_center[0] - left_button.width,move_button_center[1]))
 
     right_button = Button("right",
                           on_click=(lambda a: True, "NO_VARIABLE", "go_right"),
                           on_release=(lambda a: False, "NO_VARIABLE", "go_right"))
-    right_button.set_pos((right_button.width*5/2,HEIGHT/2))
+    right_button.set_pos((move_button_center[0] + right_button.width,move_button_center[1]))
 
     up_button = Button("up",
-                       on_click=(lambda a: not go_down, "NO_VARIABLE", "go_up"))
-    up_button.set_pos((up_button.width*3/2,HEIGHT/2-up_button.height))
+                       on_click=(lambda a: (not go_down) and player.can_move, "NO_VARIABLE", "go_up"))
+    up_button.set_pos((move_button_center[0],move_button_center[1]-up_button.height))
 
     down_button = Button("down",
-                         on_click=(lambda a: not go_up, "NO_VARIABLE", "go_down"))
-    down_button.set_pos((down_button.width*3/2,HEIGHT/2+down_button.height))
+                         on_click=(lambda a: (not go_up) and player.can_move, "NO_VARIABLE", "go_down"))
+    down_button.set_pos((move_button_center[0],move_button_center[1]+down_button.height))
 
 def buttons_on(event):
     for button in all_buttons:
@@ -144,6 +178,7 @@ def set_up_game():
     global maze
     global room_number
     global all_sprites
+    global all_loot
     global number_of_chests
     global number_of_found_chests
     global no_visited_rooms
@@ -157,14 +192,15 @@ def set_up_game():
 
     player.change_x(SCENE_WIDTH/2)
     player.change_state("idle")
-    player.health = 5
     player.is_dead = False
 
     player.colliding = []
 
-    attack_button.hide()
+    attack_button.disable()
 
     all_sprites = []
+    all_loot = []
+
     room_number = 0
     number_of_chests = 0
     number_of_found_chests = 0
@@ -381,14 +417,14 @@ def update_buttons():
     for thing in player.attacking:
         if (thing.name == "skeleton" and thing.state == "idle" and
             player.state != "hit" and  player.state != "die"):
-            attack_button.show()
+            attack_button.enable()
             break
         else:
-            attack_button.hide()
+            attack_button.disable()
 
 def change_player_speed():
     player.speed = 0
-    if((keyboard.left or keyboard.a  or go_left) ^ (keyboard.right or keyboard.d or go_right)):
+    if(((keyboard.left or keyboard.a  or go_left) ^ (keyboard.right or keyboard.d or go_right)) and player.can_move):
         player.speed = player.running_speed
         if player.state == "running" or player.state == "idle":
             if(keyboard.left or keyboard.a or go_left):
@@ -478,6 +514,15 @@ def entity_move():
     player.move()
     realign_player()
 
+def animate_loot():
+    if len(all_loot) > 0:
+        player.can_move = False
+        if all_loot[-1].is_animating_finished():
+            loot_collected[all_loot[-1].name] += 1
+            all_sprites.remove(all_loot.pop())
+    else:
+        player.can_move = True
+
 def animate_entities():
     player.animate()
     for sprite in all_sprites:
@@ -509,6 +554,11 @@ def open_chest(chest):
     number_of_found_chests += 1
     maze.rooms[room_number].has_closed_chest = False
     sounds.load(chest.sound_path()).play()
+    for type in chest.loot_table.keys():
+        for _ in range(randint(chest.loot_table[type][0],chest.loot_table[type][1])):
+            loot = Loot(type,chest.pos)
+            all_sprites.append(loot)
+            all_loot.append(loot)   
 
 def play_sounds():
     for sound in player.all_sounds:
@@ -524,12 +574,18 @@ def exit_game():
     game_ended = True
     set_up_game()
 
+def on_death():
+    player.health = 5
+    for key in loot_collected.keys():
+        loot_collected[key] = 0
+
 def on_key_down():
     global go_down, go_up
-    if keyboard.up or keyboard.w:
-        go_up = True
-    elif keyboard.down or keyboard.s:
-        go_down = True
+    if player.can_move:
+        if keyboard.up or keyboard.w:
+            go_up = True
+        elif keyboard.down or keyboard.s:
+            go_down = True
     if player.state == "idle":
         if keyboard.lshift and jump_button.can_interact:
             player.change_state("jump")
@@ -550,7 +606,7 @@ def on_mouse_move(pos):
     mouse_hitbox.top = pos[1]-1
 
 load_mazes()
-make_buttons()
+make_ui()
 set_up_game()
 
 #show_hitboxes = True # for debugging only
@@ -572,9 +628,17 @@ def draw():
     player.draw()
     player.x -= UI_BAR_WIDTH
     chest_icon.draw()
+    for i in range(len(hearts)):
+        if player.health > i:
+            hearts[i].draw()
+        else:
+            hearts[i].lost.draw()
     for button in all_buttons:
             button.background.draw()
             button.draw()
+    for thing in loot_icons:
+        thing.draw()
+        screen.draw.text(str(loot_collected[thing.name]), midleft = (thing.pos[0] + thing.width/2, thing.pos[1]), color="white", fontsize=50)
     screen.draw.text(str(number_of_found_chests) + "/" + str(number_of_chests), center = chest_icon.pos, color="yellow", fontsize=50)
 
 def update():
@@ -585,10 +649,12 @@ def update():
         entity_move()
         update_buttons()
         animate_tiles()
-        animate_entities()  
+        animate_entities()
+        animate_loot()
         play_sounds()
         if player.is_dead:
             game_ended = True
+            on_death()
             set_up_game()
 
 async def main():

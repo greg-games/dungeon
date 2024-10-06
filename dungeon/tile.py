@@ -37,12 +37,31 @@ class AnimatedTile(Tile):
                 self.frame = 0   
             else:
                 self.has_finished_animating = True
-    
+
+chest_loot_table = [
+    {
+        "coin":(3,5)
+    },{
+        "crystal_red":(-1,2),
+        "coin":(4,6)
+    },{
+        "crystal_green":(0,3),
+        "crystal_red":(1,3),
+        "coin":(5,7)
+    },{
+        "crystal_violet":(1,2),
+        "crystal_green":(1,3),
+        "crystal_red":(2,4),
+        "coin":(6,8)
+    },
+]
+
 class Chest(AnimatedTile):
     def __init__(self, name:str, variant:int, x:int):
         self.bottom = HEIGHT - Actor("tiles/brick/variant_0").height
         super().__init__(name, variant, "opening", (x,self.bottom - Actor("tiles/chest/variant_0/opening/0").height/2))
-    
+        self.loot_table = chest_loot_table[self.variant]
+
     def sound_path(self):
         return f"chest/{self.variant}"
 

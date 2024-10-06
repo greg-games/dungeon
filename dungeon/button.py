@@ -74,12 +74,10 @@ class Button(Actor):
         if (self.mode == "pressed" and self._pressed != None and self.can_interact):
             return self._pressed(input)
 
-    def hide(self):
-        self._orig_surf.set_alpha(0)
-        self.background._orig_surf.set_alpha(0)
+    def disable(self):
+        self.image = f"ui/buttons/{self.name}_disabled"
         self.can_interact = False
 
-    def show(self):
-        self._orig_surf.set_alpha(255)
-        self.background._orig_surf.set_alpha(255)
+    def enable(self):
+        self.image = f"ui/buttons/{self.name}"
         self.can_interact = True
