@@ -249,7 +249,6 @@ def make_room_frame(i):
     make_ladder(maze.rooms[i].north(), brick.height/2, (HEIGHT-brick.height)/2)
     make_wall(maze.rooms[i].east(), SCENE_WIDTH - brick.width/2)
     make_ladder(maze.rooms[i].south(), HEIGHT - brick.height/2, HEIGHT)
-    
 
 def make_addons(i):
     crack = Actor("tiles/crack/variant_0")
@@ -277,7 +276,7 @@ def make_addons(i):
                         distance = 0
                         if(tile.name == addon.name):
                             distance = addon.min_distance
-                        if(iscolliding(new_addon,tile,distance)):
+                        if(iscolliding(Actor(new_addon.image(),new_addon.pos),Actor(tile.image(),tile.pos),distance)):
                             pos_avaible = False
                             break
                     counter += 1
@@ -330,9 +329,12 @@ def build_room(i):
     add_skeletons()
     all_sprites = []
     for tile in maze.rooms[i].tiles:
+        tile_sprite = Actor(tile.image())
+        tile_sprite.pos = tile.pos
         if isinstance(tile,Chest):
-            tile.bottom = tile.bottom
-        all_sprites.append(tile)
+            tile_sprite.bottom = tile.bottom
+        tile_sprite.name = tile.name
+        all_sprites.append(tile_sprite)
     for enemy in maze.rooms[i].enemies:
         all_sprites.append(enemy)
     all_sprites.append(player)
@@ -515,11 +517,13 @@ def animate_entities():
             sprite.animate()
 
 def animate_tiles():
-    for tile in all_sprites:
+    for i in range(len(maze.rooms[room_number].tiles)):
+        tile = maze.rooms[room_number].tiles[i]
         if isinstance(tile,AnimatedTile):
-            tile.animate(TILE_FRAME_SPEED)
+            tile.next_frame(TILE_FRAME_SPEED)
+            all_sprites[i].image = tile.image()
             if isinstance(tile,Chest):
-                tile.bottom = tile.star_bottom
+                all_sprites[i].bottom = tile.bottom
             if(tile.name == "door" and tile.has_finished_animating):
                 tile.is_animating = False
                 tile.frame = 0
