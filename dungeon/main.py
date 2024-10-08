@@ -3,11 +3,12 @@ import asyncio
 import pygame
 import numpy
 import pygame.surfarray
+import time
 
 from pgzero.rect import Rect
 from random import *
 from addon import Addon
-from constants import NO_VARIANT, HEIGHT, WIDTH, SCENE_WIDTH, UI_BAR_WIDTH, LEFT, RIGHT, TITLE, SOUND_NOT_PLAYING, SOUND_WILL_BE_PLAYED, SOUND_IS_PLAYING, NO_VARIABLE
+from constants import NO_VARIANT, HEIGHT, WIDTH, SCENE_WIDTH, UI_BAR_WIDTH, LEFT, RIGHT, TITLE, SOUND_NOT_PLAYING, SOUND_WILL_BE_PLAYED, SOUND_IS_PLAYING, NO_VARIABLE, fps
 from global_functions import iscolliding, is_in_browser
 from maze import Maze
 from room import Room
@@ -22,6 +23,9 @@ seed(None)
 
 game_ended = False
 
+dt = 1
+clock = pygame.time.Clock()
+
 pygame.display.set_mode((WIDTH, HEIGHT))
 player = Player()
 player.pos = SCENE_WIDTH/2,HEIGHT - 120 - player.height/2 
@@ -33,6 +37,9 @@ chest_icon = Actor("ui/chest_icon")
 chest_icon.pos = (UI_BAR_WIDTH/2,chest_icon.height)
 
 background = Actor("background",(WIDTH/2,HEIGHT/2))
+map_background = Actor("map_background",(WIDTH/2,HEIGHT/2))
+
+map_open = False
 
 mouse_hitbox = Rect((0,0),(2, 2))
 go_left = False
@@ -53,7 +60,7 @@ show_hitboxes = False
 
 mazes = []
 
-TILE_FRAME_SPEED = 0.5
+TILE_FRAME_SPEED = 0.01
 
 symbols2 = {
 "┼":(1,1,1,1),
@@ -72,14 +79,6 @@ symbols2 = {
 "╺":(0,0,1,0),
 "╻":(0,0,0,1),
 }
-
-if is_in_browser():
-    player.running_speed *= 1.75
-    TILE_FRAME_SPEED = 1
-    #chrome_options = Options()
-    #chrome_options.add_argument("--disable-infobars") # removes a warning
-    #chrome_options.add_argument("--kiosk")#open in full screen
-    #chrome_options.add_argument("--app=https://greg-games.github.io/dungeon")
 
 def make_ui():
     pos = [(-2.5,1),(2,1),(-1.5,3),(1,3)]
@@ -101,7 +100,11 @@ def make_ui():
     make_buttons()
 
 def make_buttons():
-    global duck_button, jump_button, attack_button, left_button, right_button, up_button, down_button
+    global duck_button, jump_button, attack_button, left_button, right_button, up_button, down_button, map_button
+    map_button = Button("map",
+                        on_click=(lambda a: toggle_map(), "NO_VARIABLE", "NO_VARIABLE"))
+    map_button.set_pos((WIDTH-UI_BAR_WIDTH+map_button.width,HEIGHT-map_button.height))
+
     duck_button = Button("duck",
                          on_click=(lambda a: player.change_state("duck") 
                                    if player.state == "idle" or player.state == "running" 
@@ -204,6 +207,7 @@ def set_up_game():
     all_loot = []
 
     room_number = 0
+    toggle_map(set_to = False)
     number_of_chests = 0
     number_of_found_chests = 0
     no_visited_rooms = 0
@@ -342,6 +346,7 @@ def build_room(i):
     for room in maze.rooms:
         room.last_visited += 1
     maze.rooms[i].last_visited = 0
+    maze.rooms[i].visited = True
 
 def maze_printable(func):
     def wrapper():
@@ -412,7 +417,7 @@ def update_buttons():
 def change_player_speed():
     player.speed = 0
     if(((keyboard.left or keyboard.a  or go_left) ^ (keyboard.right or keyboard.d or go_right)) and player.can_move):
-        player.speed = player.running_speed
+        player.speed = player.running_speed*dt
         if player.state == "running" or player.state == "idle":
             if(keyboard.left or keyboard.a or go_left):
                 if player.dir == RIGHT:
@@ -484,7 +489,7 @@ def entity_move():
                         if (thing.name == "player" or (thing.name == "skeleton" and sprite.islookingat(thing))):
                             can_move = False
                     if can_move:
-                        sprite.go_to_player(player.x)
+                        sprite.go_to_player(player.x,dt)
                         sprite.move()
                 sprite.update_colliding()
                 for thing in sprite.colliding:
@@ -504,23 +509,23 @@ def entity_move():
 def animate_loot():
     if len(all_loot) > 0:
         player.can_move = False
-        if all_loot[-1].is_animating_finished():
+        if all_loot[-1].is_animating_finished(dt):
             loot_collected[all_loot[-1].name] += 1
             all_sprites.remove(all_loot.pop())
     else:
-        player.can_move = True
+        player.can_move = not map_open
 
 def animate_entities():
-    player.animate()
+    player.animate(dt)
     for sprite in all_sprites:
         if isinstance(sprite,Enemy):
-            sprite.animate()
+            sprite.animate(dt)
 
 def animate_tiles():
     for i in range(len(maze.rooms[room_number].tiles)):
         tile = maze.rooms[room_number].tiles[i]
         if isinstance(tile,AnimatedTile):
-            tile.next_frame(TILE_FRAME_SPEED)
+            tile.next_frame(TILE_FRAME_SPEED*dt)
             all_sprites[i].image = tile.image()
             if isinstance(tile,Chest):
                 all_sprites[i].bottom = tile.bottom
@@ -546,6 +551,21 @@ def open_chest(chest):
             loot = Loot(type,chest.pos)
             all_sprites.append(loot)
             all_loot.append(loot)   
+
+def toggle_map(set_to:bool = None):
+    global map_open
+    if set_to != None:
+        map_open = set_to
+    else:
+        map_open = not map_open
+    if map_open:
+        player.can_move = False
+        jump_button.disable()
+        duck_button.disable()
+    else:
+        player.can_move = len(all_loot) == 0
+        jump_button.enable()
+        duck_button.enable() 
 
 def play_sounds():
     for sound in player.all_sounds:
@@ -628,9 +648,12 @@ def draw():
         thing.draw()
         screen.draw.text(str(loot_collected[thing.name]), midleft = (thing.pos[0] + thing.width/2, thing.pos[1]), color="white", fontsize=50)
     screen.draw.text(str(number_of_found_chests) + "/" + str(number_of_chests), center = chest_icon.pos, color="yellow", fontsize=50)
+    if map_open:
+        map_background.draw()
 
 def update():
-    global game_ended
+    global game_ended, dt
+    dt = clock.tick(60)
     if not game_ended:
         pressing_up_or_down()
         change_player_speed()

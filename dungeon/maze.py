@@ -15,20 +15,29 @@ class Maze:
             self.rooms[i].rooms_in_range = self.rooms_in_range(i,3)
 
     def __str__(self):
+        return self.as_string()
+    
+    def as_string(self,big =True, visited = False):
         maze_str = ""
         for i in range(self.height):
-            for j in range(self.width):
-                maze_str += str(self.rooms[i*self.width+j]) + " "
-            maze_str +=  "  ||  "
+            if big:
+                for j in range(self.width):
+                    maze_str += self.rooms[i*self.width+j].as_string(visited) + " "
+                maze_str +=  "  ||  "
             if(2*i < self.height):
                 for j in range(self.width):
-                    maze_str += str(self.rooms[(2*i)*self.width+j])
+                    maze_str += self.rooms[(2*i)*self.width+j].as_string(visited)
+            elif not big:
+                break
             maze_str += "\n"
-            for j in range(self.width): maze_str += "  "
-            maze_str += "  ||  "
+            if big:
+                for j in range(self.width): maze_str += "  "
+                maze_str += "  ||  "
             if(2*i+1 < self.height):
                 for j in range(self.width):
-                    maze_str += str(self.rooms[(2*i+1)*self.width+j])
+                    maze_str += self.rooms[(2*i+1)*self.width+j].as_string(visited)
+            elif not big:
+                break
             maze_str += "\n"
         return f"\nWidth: {self.width}\nHeight: {self.height}\n{maze_str}"
     

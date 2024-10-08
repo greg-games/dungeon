@@ -9,12 +9,8 @@ from pygame import transform
 all_entities = []
 all_sprites = []
 
-ENTITY_FRAME_SPEED = 0.2
+ENTITY_FRAME_SPEED = 0.009
 
-if is_in_browser():
-    ENTITY_FRAME_SPEED = 0.6
-
-#@staticmethod
 def update_all_sprites(new_all_sprites):
     global all_sprites
     all_sprites = new_all_sprites
@@ -48,8 +44,8 @@ class Entity(Actor):
         self.attack_hitbox =  self.hitbox.copy()
         all_entities.append(self)
 
-    def animate(self):
-        self.frame += self.frame_speed[self.state]
+    def animate(self,dt):
+        self.frame += self.frame_speed[self.state]*dt
         if self.frame > self._no_frames[self.state] - 1:
             self.frame = 0
             if self.state == "die":
@@ -121,8 +117,8 @@ class Entity(Actor):
 
 class Player(Entity):
     def __init__(self):
-        super().__init__("player","variant_0",SCENE_WIDTH//120 - 0.5,5, hitbox_width = 1/5, hitbox_offset = -1/5,
-                         duck = 0.4, idle = 0.6, running = 1.1, hit = 0.073)
+        super().__init__("player","variant_0",0.4,5, hitbox_width = 1/5, hitbox_offset = -1/5,
+                         duck = 0.4, idle = 0.6, running = 1.2, jump = 1.1, hit = 0.073)
         self.can_move = True
 
     def update_hitboxes(self):
@@ -142,8 +138,8 @@ class Player(Entity):
         if(self.state == "idle" or self.state == "running"):
             super().move()
 
-    def animate(self):
-        if(self.frame + self.frame_speed[self.state] > self._no_frames[self.state] - 1):
+    def animate(self, dt):
+        if(self.frame + self.frame_speed[self.state]*dt > self._no_frames[self.state] - 1):
             if self.state == "die":
                 self.is_dead = True
                 return
@@ -151,7 +147,7 @@ class Player(Entity):
                 self.change_state("idle")
             else:
                 self.change_state("running",self.dir)
-        super().animate()
+        super().animate(dt)
         super().update_colliding()
         if(self.state == "attack1"and
             (round(self.frame) >= self._no_frames[self.state]-3)):
@@ -163,12 +159,12 @@ class Enemy(Entity):
     def __init__(self,name,variant):
         self.name = name
         self.variant = variant
-        super().__init__(name,variant,SCENE_WIDTH//240,3, hitbox_offset = -1/3,
-                         idle = 1.1, attack1 = 0.9, attack2 = 0.85, hit = 0.75, hitbox_width = 1/2)
+        super().__init__(name,variant,0.2,3, hitbox_offset = -1/3,
+                         idle = 1.1, attack1 = 0.9, attack2 = 0.92, hit = 0.75, hitbox_width = 1/2, die = 1.4)
         self.attack_progress = 1
 
-    def go_to_player(self,player_x):
-        self.speed = self.running_speed
+    def go_to_player(self,player_x,dt):
+        self.speed = self.running_speed*dt
         if self.x > player_x:
             self.dir = LEFT
         else:
@@ -187,8 +183,8 @@ class Enemy(Entity):
             self.attack_hitbox.height = self._hitbox_height
             self.attack_hitbox.bottom = self.bottom
     
-    def animate(self):
-        super().animate()
+    def animate(self, dt):
+        super().animate(dt)
         super().update_colliding()
         if((self.state == "attack1" or self.state == "attack2")and
             (round(self.frame) >= self._no_frames[self.state]-3)):
@@ -196,7 +192,7 @@ class Enemy(Entity):
                 if object.name == "player":
                     object.change_state("hit")
                     self.change_state("idle")
-                    super().animate()
+                    super().animate(dt)
     
     def attack(self):
         if (self.state == "running" or self.frame == 0):

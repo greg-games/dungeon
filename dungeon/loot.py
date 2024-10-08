@@ -8,14 +8,13 @@ class Loot(Actor):
         self._orig_surf.set_alpha(0)  
         self.raise_height = 100
         no_frames = 20
-        if is_in_browser(): no_frames = 5
         self.step = self.raise_height/no_frames
         self.end_y = self.y - self.raise_height
 
-    def is_animating_finished(self): 
+    def is_animating_finished(self, dt): 
         self._orig_surf.set_alpha(255)
         if self.y > self.end_y:
-            self.y -= self.step
+            self.y -= self.step*dt/10
             return False
         else:
             return True

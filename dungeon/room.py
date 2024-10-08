@@ -32,8 +32,16 @@ class Room:
         self.south_ladder_index = -1
         self.animated_tiles_indexes = []
         self.enemies = []
-    
+        self.visited = False
+
     def __str__(self):
+        return self.as_string()
+    
+    def as_string(self,visited = False):
+        if visited:
+            if self.visited:
+                return symbols[tuple(self.exits)]
+            return " "
         return symbols[tuple(self.exits)]
 
     def no_of_exits(self):

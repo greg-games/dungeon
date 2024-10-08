@@ -31,7 +31,7 @@ class AnimatedTile(Tile):
         return f"tiles/{self.name}/variant_{self.variant}/{self.state}/{round(self.frame)}"
     def next_frame(self,frame_speed):
         if self.is_animating:
-            if self.frame < self.no_frames[self.state] - 1:
+            if self.frame + frame_speed < self.no_frames[self.state] - 1:
                 self.frame += frame_speed
             elif self.triger == "always":
                 self.frame = 0   
