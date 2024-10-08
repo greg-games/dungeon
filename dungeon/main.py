@@ -8,7 +8,7 @@ import time
 from pgzero.rect import Rect
 from random import *
 from addon import Addon
-from constants import NO_VARIANT, HEIGHT, WIDTH, SCENE_WIDTH, UI_BAR_WIDTH, LEFT, RIGHT, TITLE, SOUND_NOT_PLAYING, SOUND_WILL_BE_PLAYED, SOUND_IS_PLAYING, NO_VARIABLE, fps
+from constants import NO_VARIANT, HEIGHT, WIDTH, SCENE_WIDTH, UI_BAR_WIDTH, LEFT, RIGHT, TITLE, SOUND_NOT_PLAYING, SOUND_WILL_BE_PLAYED, SOUND_IS_PLAYING, NO_VARIABLE
 from global_functions import iscolliding, is_in_browser
 from maze import Maze
 from room import Room
@@ -18,6 +18,8 @@ from loot import Loot
 from pgzero.actor import Actor
 from pgzero.loaders import sounds
 from button import Button, all_buttons, buttons_in, buttons_out
+from line import Line
+from maze_map import MazeMap
 
 seed(None)
 
@@ -40,6 +42,7 @@ background = Actor("background",(WIDTH/2,HEIGHT/2))
 map_background = Actor("map_background",(WIDTH/2,HEIGHT/2))
 
 map_open = False
+maze_map = None
 
 mouse_hitbox = Rect((0,0),(2, 2))
 go_left = False
@@ -181,6 +184,7 @@ def load_mazes():
 def set_up_game():
     global game_ended
     global maze
+    global maze_map
     global room_number
     global all_sprites
     global all_loot
@@ -194,6 +198,8 @@ def set_up_game():
     else: 
         maze = mazes[maze_number]
     print(maze)
+
+    maze_map = MazeMap(maze)
 
     player.change_x(SCENE_WIDTH/2)
     player.change_state("idle")
@@ -650,6 +656,7 @@ def draw():
     screen.draw.text(str(number_of_found_chests) + "/" + str(number_of_chests), center = chest_icon.pos, color="yellow", fontsize=50)
     if map_open:
         map_background.draw()
+        maze_map.draw(maze)
 
 def update():
     global game_ended, dt
