@@ -9,7 +9,7 @@ from pgzero.rect import Rect
 from random import *
 from addon import Addon
 from constants import NO_VARIANT, HEIGHT, WIDTH, SCENE_WIDTH, UI_BAR_WIDTH, LEFT, RIGHT, TITLE, SOUND_NOT_PLAYING, SOUND_WILL_BE_PLAYED, SOUND_IS_PLAYING, NO_VARIABLE
-from global_functions import iscolliding, is_in_browser
+from global_functions import iscolliding
 from maze import Maze
 from room import Room
 from tile import Tile, AnimatedTile, Chest, Door
@@ -36,7 +36,6 @@ loot_icons = []
 hearts = []
 
 chest_icon = Actor("ui/chest_icon")
-chest_icon.pos = (UI_BAR_WIDTH/2,chest_icon.height)
 
 background = Actor("background",(WIDTH/2,HEIGHT/2))
 map_background = Actor("map_background",(WIDTH/2,HEIGHT/2))
@@ -84,7 +83,8 @@ symbols2 = {
 }
 
 def make_ui():
-    pos = [(-2.5,1),(2,1),(-1.5,3),(1,3)]
+    chest_icon.pos = (UI_BAR_WIDTH/2-chest_icon.width,2.3*chest_icon.height)
+    pos =[(-2,1),(0,1),(2,1),(1,3)] #[(-2.5,1),(2,1),(-1.5,3),(1,3)]
     for (i, key) in enumerate(loot_collected.keys()):
         x,y = pos[i]
         loot_icon = Actor(f"ui/{key}_icon")
@@ -263,8 +263,8 @@ def make_room_frame(i):
 def make_addons(i):
     crack = Actor("tiles/crack/variant_0")
     all_addons = [ #(name, number of variants, max number on screan, min distance, x start, x end, y start, y end)
-        Addon("torch",0,2,200,SCENE_WIDTH/10, SCENE_WIDTH*9/10, HEIGHT/2, HEIGHT/2),
-        Addon("crack",0,3,100,crack.width/2, SCENE_WIDTH - crack.width/2, HEIGHT/10, HEIGHT*7/8),
+        Addon("candle",1,2,200,SCENE_WIDTH/10, SCENE_WIDTH*9/10, HEIGHT/2, HEIGHT/2),
+        Addon("crack",10,3,100,crack.width/2, SCENE_WIDTH - crack.width/2, HEIGHT/10, HEIGHT/2),
     ]
     if(i == 0):
         maze.rooms[i].tiles_add(Door("door",0,"closing",(SCENE_WIDTH/2,HEIGHT - 120 - Actor("tiles/door/variant_0/closing/0").height/2)))
