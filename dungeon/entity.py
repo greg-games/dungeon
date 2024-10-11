@@ -16,7 +16,9 @@ def update_all_sprites(new_all_sprites):
     all_sprites = new_all_sprites
 
 class Entity(Actor):
-    def __init__(self,name,variant,running_speed,health, hitbox_width = 1, hitbox_height = 1, hitbox_offset = 0, **kwargs):
+    def __init__(self,name,variant,running_speed,health,
+                 hitbox_width = 1, hitbox_height = 1, hitbox_offset = 0,
+                 attack_hitbox_width = 1, attack_hitbox_height = 1, **kwargs):
         self.name = name
         self.variant = variant
         self.all_sounds = {sound_name[:-4]:SOUND_NOT_PLAYING for sound_name in os.listdir(f"sounds/{self.name}")}
@@ -42,6 +44,8 @@ class Entity(Actor):
             (self.x - self._hitbox_width/2, self.y - self._hitbox_height/2), 
             (self._hitbox_width, self._hitbox_height))
         self.attack_hitbox =  self.hitbox.copy()
+        self.attack_hitbox.width *= attack_hitbox_width
+        self.attack_hitbox.height *= attack_hitbox_height
         all_entities.append(self)
 
     def animate(self,dt):
@@ -54,13 +58,14 @@ class Entity(Actor):
                 return
         self.image = f"entities/{self.name}/{self.variant}/{self.state}/{round(self.frame)}"
         if self.dir == LEFT:
-            self._orig_surf = transform.flip(self._orig_surf, True, False) 
+            self._orig_surf = transform.flip(self._orig_surf, True, False)
 
     def update_hitboxes(self):
         self.hitbox.topleft = (self.x - self.hitbox.width/2 + self.hitbox_offset*self.dir,
                                 self.y - self.hitbox.height/2)
-        self.attack_hitbox.topleft = (self.x - self.hitbox.width*(0.5 - self.dir) + self.hitbox_offset*self.dir,
-                                       self.y - self.hitbox.height/2)
+        self.attack_hitbox.topleft = (self.x - self.hitbox.width/2 + self.attack_hitbox.width*self.dir
+                                      + self.hitbox_offset*self.dir,
+                                       self.y - self.attack_hitbox.height/2)
 
     def change_state(self,state,dir = None):
         if dir != None:
@@ -159,7 +164,7 @@ class Enemy(Entity):
     def __init__(self,name,variant):
         self.name = name
         self.variant = variant
-        super().__init__(name,variant,0.2,3, hitbox_offset = -1/3,
+        super().__init__(name,variant,0.2,3, hitbox_offset = -1/3, attack_hitbox_width = 0.8,
                          idle = 1.1, attack1 = 0.9, attack2 = 0.92, hit = 0.75, hitbox_width = 1/2, die = 1.4)
         self.attack_progress = 1
 
@@ -187,7 +192,7 @@ class Enemy(Entity):
         super().animate(dt)
         super().update_colliding()
         if((self.state == "attack1" or self.state == "attack2")and
-            (round(self.frame) >= self._no_frames[self.state]-3)):
+            (round(self.frame) == self._no_frames[self.state]-4)):
             for object in self.attacking:
                 if object.name == "player":
                     object.change_state("hit")

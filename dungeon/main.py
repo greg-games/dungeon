@@ -479,6 +479,7 @@ def entity_move():
     for sprite in all_sprites:
         if isinstance(sprite,Enemy):
             if sprite.is_dead:
+                maze.rooms[room_number].enemies.remove(sprite)
                 all_sprites.remove(sprite)
                 maze.rooms[room_number].no_skeletons -= 1
                 if maze.rooms[room_number].has_closed_chest:
@@ -526,7 +527,7 @@ def animate_entities():
     for sprite in all_sprites:
         if isinstance(sprite,Enemy):
             sprite.animate(dt)
-
+            
 def animate_tiles():
     for i in range(len(maze.rooms[room_number].tiles)):
         tile = maze.rooms[room_number].tiles[i]
