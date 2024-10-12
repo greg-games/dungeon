@@ -1,13 +1,29 @@
+import os
 from pgzero.actor import Actor
+from constants import *
 
 class Addon(Actor):
-    def __init__(self, name:str, number_of_variants:int, max_number_on_screan:int,min_distance:int, 
-                 x_start:int, x_end:int, y_start:int, y_end:int):
+
+    def __init__(self, name):
         self.name = name
-        self.number_of_variants = number_of_variants
-        self.max_number_on_screan = max_number_on_screan
-        self.min_distance = min_distance
-        self.x_start = x_start
-        self.x_end = x_end
-        self.y_start = y_start
-        self.y_end = y_end
+        self.number_of_variants = len(os.listdir(f"images/tiles/addons/{name}")) - 1
+        max_number_on_screan = 0
+        min_distance = 0
+        x_start = 0
+        x_end = 0
+        y_start = 0
+        y_end = 0
+
+        constants = {name : value for (name, value) in globals().items() if name.isupper()}
+
+        with open(f"images/tiles/addons/{name}/properties.txt") as properties:
+            for line in properties.readlines():
+                prop, value = line.split("=")
+                if "\"" in value:
+                    self.__setattr__(prop.strip(),value.strip()) 
+                else:
+                    value = value.strip()
+                    for constant_name in constants.keys():
+                        value = value.replace(constant_name,str(constants[constant_name]))
+                    self.__setattr__(prop.strip(),eval(value))
+all_addons = {Addon(addon_name) for addon_name in os.listdir(f"images/tiles/addons")}

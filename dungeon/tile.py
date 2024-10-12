@@ -10,6 +10,10 @@ class Tile:
     def image(self):
         return f"tiles/{self.name}/variant_{self.variant}"
 
+class TileAddon(Tile):
+    def image(self):
+        return f"tiles/addons/{self.name}/variant_{self.variant}"
+
 triggers ={
     "chest":"click",
     "door":"click"

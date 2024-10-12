@@ -1,0 +1,6 @@
+max_number_on_screan = 2
+min_distance = 200
+x_start = SCENE_WIDTH/10
+x_end = SCENE_WIDTH*9/10
+y_start = HEIGHT/2
+y_end = HEIGHT/2

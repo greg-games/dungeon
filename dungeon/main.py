@@ -1,24 +1,24 @@
-import pgzrun
-import asyncio
 import pygame
-import numpy
+import pgzrun
 import pygame.surfarray
+import asyncio
+import numpy
 import time
 
+from pgzero.actor import Actor
 from pgzero.rect import Rect
+from pgzero.loaders import sounds
 from random import *
-from addon import Addon
-from constants import NO_VARIANT, HEIGHT, WIDTH, SCENE_WIDTH, UI_BAR_WIDTH, LEFT, RIGHT, TITLE, SOUND_NOT_PLAYING, SOUND_WILL_BE_PLAYED, SOUND_IS_PLAYING, NO_VARIABLE
+from constants import *
 from global_functions import iscolliding
+pygame.display.set_mode((WIDTH, HEIGHT))
 from maze import Maze
 from room import Room
-from tile import Tile, AnimatedTile, Chest, Door
+from tile import Tile, TileAddon, AnimatedTile, Chest, Door
+from addon import Addon, all_addons
 from entity import Entity, Player, Enemy, update_all_sprites
 from loot import Loot
-from pgzero.actor import Actor
-from pgzero.loaders import sounds
 from button import Button, all_buttons, buttons_in, buttons_out
-from line import Line
 from maze_map import MazeMap
 
 seed(None)
@@ -28,7 +28,6 @@ game_ended = False
 dt = 1
 clock = pygame.time.Clock()
 
-pygame.display.set_mode((WIDTH, HEIGHT))
 player = Player()
 player.pos = SCENE_WIDTH/2,HEIGHT - 120 - player.height/2 
 
@@ -40,7 +39,6 @@ ui_bar_left = Rect(0,0,UI_BAR_WIDTH,HEIGHT)
 ui_bar_right = Rect(WIDTH - UI_BAR_WIDTH,0,UI_BAR_WIDTH,HEIGHT)
 
 background = Actor("background",(WIDTH/2,HEIGHT/2))
-map_background = Actor("map_background",(WIDTH/2,HEIGHT/2))
 
 map_open = False
 maze_map = None
@@ -86,7 +84,7 @@ symbols2 = {
 
 def make_ui():
     chest_icon.pos = (UI_BAR_WIDTH/2-chest_icon.width,2.3*chest_icon.height)
-    pos =[(-2,1),(0,1),(2,1),(1,3)] #[(-2.5,1),(2,1),(-1.5,3),(1,3)]
+    pos =[(-2,1),(0,1),(2,1),(1,3)]
     for (i, key) in enumerate(loot_collected.keys()):
         x,y = pos[i]
         loot_icon = Actor(f"ui/{key}_icon")
@@ -263,23 +261,14 @@ def make_room_frame(i):
     make_ladder(maze.rooms[i].south(), HEIGHT - brick.height/2, HEIGHT)
 
 def make_addons(i):
-    crack = Actor("tiles/crack/variant_0")
-    all_addons = [ #(name, number of variants, max number on screan, min distance, x start, x end, y start, y end)
-        Addon("candle",1,2,200,SCENE_WIDTH/10, SCENE_WIDTH*9/10, HEIGHT/2, HEIGHT/2),
-        Addon("crack",10,3,100,crack.width/2, SCENE_WIDTH - crack.width/2, HEIGHT/10, HEIGHT/2),
-    ]
     if(i == 0):
         maze.rooms[i].tiles_add(Door("door",0,"closing",(SCENE_WIDTH/2,HEIGHT - 120 - Actor("tiles/door/variant_0/closing/0").height/2)))
-        maze.rooms[i].animated_tiles_indexes.append(len(maze.rooms[i].tiles) - 1)
         maze.rooms[i].tiles[-1].is_animating = True
     for addon in all_addons:
         for _ in range(addon.max_number_on_screan):
             if(random() > 0.5):
-                if addon.number_of_variants == 0: 
-                    variant = NO_VARIANT
-                else:
-                    variant = randint(0,addon.number_of_variants)
-                new_addon = Tile(addon.name,variant)
+                variant = randrange(0,addon.number_of_variants)
+                new_addon = TileAddon(addon.name,variant)
                 counter = 0
                 while(counter < 20):
                     new_addon.pos = (randint(addon.x_start,addon.x_end),randint(addon.y_start,addon.y_end))
@@ -665,7 +654,6 @@ def draw():
     draw_sceen()
     draw_ui()
     if map_open:
-        map_background.draw()
         maze_map.draw(maze)
 
 def update():

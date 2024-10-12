@@ -1,5 +1,8 @@
+from pgzero.actor import Actor
 from line import Line
-from constants import SCENE_WIDTH, HEIGHT, UI_BAR_WIDTH
+from constants import SCENE_WIDTH, HEIGHT, UI_BAR_WIDTH, WIDTH
+
+map_background = Actor("map_background",(WIDTH/2,HEIGHT/2))
 
 class MazeMap():
     def __init__(self,maze):
@@ -13,6 +16,7 @@ class MazeMap():
             self.lines.append(line)
 
     def draw(self,maze):
+        map_background.draw()
         for i, line in enumerate(self.lines):
             if maze.rooms[i].visited:
                 line.draw()
