@@ -164,6 +164,9 @@ def buttons_on(event):
         else:
             function(None)
 
+def current_room():
+    return maze.rooms[room_number]
+
 def load_mazes():
     file = open("labirynty.txt", "r", encoding="utf-8")
     lines = file.readlines()
@@ -173,11 +176,11 @@ def load_mazes():
         x += 1
         height = int(lines[x])
         rooms = []
-        for i in range(height):
+        for _ in range(height):
             x += 1
             line = lines[x]
-            for j in range(width):
-                rooms.append(Room(symbols2[line[j]],0,[]))
+            for i in range(width):
+                rooms.append(Room(symbols2[line[i]],0,[]))
         mazes.append(Maze(width, height, rooms))
         x += 1
 
@@ -220,130 +223,117 @@ def set_up_game():
 
     make_tiles()
 
-    build_room(room_number)
+    build_room()
 
     game_ended = False
 
 def make_tiles():
-    for i in range(len(maze.rooms)):
-        maze.rooms[i].set_distance(maze.distance[i])
-        make_room_frame(i)
-        make_addons(i)
-        make_chests(i)
+    for i, room in enumerate(maze.rooms):
+        room.set_distance(maze.distance[i])
+        make_room_frame(room)
+        if (i == 0):
+            make_door()
+        make_addons(room)
+        if(i > 0 and room.is_dead_end()):
+            make_chests(room)
     add_more_chests()
 
-def make_room_frame(i):
+def make_room_frame(room):
     brick = Actor("tiles/brick/variant_0")
 
     def make_wall(exit, x):
-        if(exit == 0):
+        if not exit:
             for j in range(HEIGHT//brick.height - 2):
-                maze.rooms[i].tiles_add(Tile("brick", randint(0,7),(x, brick.height * (3/2 + j))))
+                room.tiles_add(Tile("brick", randint(0,7),(x, brick.height * (3/2 + j))))
     
-    def make_ladder(exit, y1, y2):
-        if(exit == 0):
-            maze.rooms[i].tiles_add(Tile("brick",randint(0,7),(SCENE_WIDTH/2, y1)))
+    def make_ladder(exit, y_brick, y_ladder):
+        if not exit:
+            room.tiles_add(Tile("brick",randint(0,7),(SCENE_WIDTH/2, y_brick)))
         else:
-            maze.rooms[i].tiles_add(Tile("ladder",NO_VARIANT,(SCENE_WIDTH/2, y2)))
+            room.tiles_add(Tile("ladder",NO_VARIANT,(SCENE_WIDTH/2, y_ladder)))
 
     y = 0
     for _ in range(2):
         x = 0
         for _ in range(2):
             for j in range((SCENE_WIDTH - 1)//(2*brick.width)):
-                maze.rooms[i].tiles_add(Tile("brick",randint(0,7),(brick.width*(j + 1/2) + x, brick.height/2 + y)))
+                room.tiles_add(Tile("brick",randint(0,7),(brick.width*(j + 1/2) + x, brick.height/2 + y)))
             x = SCENE_WIDTH/2 + brick.width/2
         y = HEIGHT - brick.height
 
-    make_wall(maze.rooms[i].west(), brick.width/2)
-    make_ladder(maze.rooms[i].north(), brick.height/2, (HEIGHT-brick.height)/2)
-    make_wall(maze.rooms[i].east(), SCENE_WIDTH - brick.width/2)
-    make_ladder(maze.rooms[i].south(), HEIGHT - brick.height/2, HEIGHT)
+    make_wall(room.west(), brick.width/2)
+    make_ladder(room.north(), brick.height/2, (HEIGHT-brick.height)/2)
+    make_wall(room.east(), SCENE_WIDTH - brick.width/2)
+    make_ladder(room.south(), HEIGHT - brick.height/2, HEIGHT)
 
-def make_addons(i):
-    if(i == 0):
-        maze.rooms[i].tiles_add(Door("door",0,"closing",(SCENE_WIDTH/2,HEIGHT - 120 - Actor("tiles/door/variant_0/closing/0").height/2)))
-        maze.rooms[i].tiles[-1].is_animating = True
+def make_addons(room):
     for addon in all_addons:
         for _ in range(addon.max_number_on_screan):
             if(random() > 0.5):
                 variant = randrange(0,addon.number_of_variants)
                 new_addon = TileAddon(addon.name,variant)
-                counter = 0
-                while(counter < 20):
+                for _ in range(20):
                     new_addon.pos = (randint(addon.x_start,addon.x_end),randint(addon.y_start,addon.y_end))
                     pos_avaible = True
-                    for tile in maze.rooms[i].tiles:
+                    for tile in room.tiles:
                         distance = 0
                         if(tile.name == addon.name):
                             distance = addon.min_distance
                         if(iscolliding(Actor(new_addon.image(),new_addon.pos),Actor(tile.image(),tile.pos),distance)):
                             pos_avaible = False
                             break
-                    counter += 1
                     if pos_avaible:
-                        maze.rooms[i].tiles_add(new_addon)
+                        room.tiles_add(new_addon)
                         break
 
-def make_chests(i):
+def make_chests(room):
     global number_of_chests
-    if(maze.rooms[i].no_of_exits() == 1 and i != 0):
-        chest_type = maze.rooms[i].chest_type()
-        x = SCENE_WIDTH*(randint(0,1)*2+1)/4
-        if(maze.rooms[i].east() == 1):
-            x = SCENE_WIDTH/4
-        elif(maze.rooms[i].west() == 1):
-            x = SCENE_WIDTH*3/4
-        maze.rooms[i].tiles_add(Chest("chest",chest_type,x))
-        maze.rooms[i].animated_tiles_indexes.append(len(maze.rooms[i].tiles) - 1)
-        maze.rooms[i].has_closed_chest = True
-
-        number_of_chests += 1
+    room.add_chest()
+    number_of_chests += 1
 
 def add_more_chests():
     global number_of_chests
-    for i in range(len(maze.rooms)):
-        for tile in maze.rooms[i].tiles:
+    for i, room in enumerate(maze.rooms):
+        for tile in room.tiles:
             if isinstance(tile,Chest):
-                for room in maze.rooms_in_range(i,3):
-                    room.is_chest_in_range = True
+                for room_in_range in maze.rooms_in_range(i,3):
+                    room_in_range.is_chest_in_range = True
                 break
-    for i in range(len(maze.rooms)):
+    for i,room in enumerate(maze.rooms):
         max_allowed_distance = randrange(maze.size)
-        if(maze.rooms[i].chest_is_allowed(max_allowed_distance)):
-            chest_type = maze.rooms[i].chest_type()
-            x = SCENE_WIDTH*(randint(0,1)*2+1)/4
-            if(maze.rooms[i].north() != 1 and maze.rooms[i].south() != 1):
-                x = SCENE_WIDTH/2
-            if(chest_type > 0): chest_type -= 1
-            maze.rooms[i].tiles_add(Chest("chest",chest_type,x))
-            maze.rooms[i].animated_tiles_indexes.append(len(maze.rooms[i].tiles) - 1)
-            maze.rooms[i].has_closed_chest = True
+        if(room.chest_is_allowed(max_allowed_distance)):        
+            room.add_chest()
             number_of_chests += 1
-            for room in maze.rooms_in_range(i,3):
-                room.is_chest_in_range = True
+            for room_in_range in maze.rooms_in_range(i,3):
+                room_in_range.is_chest_in_range = True
 
-def build_room(i):
+def make_door():
+    room = maze.rooms[0]
+    room.tiles_add(Door("door",0,"closing",(SCENE_WIDTH/2,HEIGHT - 120 - Actor("tiles/door/variant_0/closing/0").height/2)))
+    room.tiles[-1].is_animating = True
+
+def build_room():
     global all_sprites
     global no_visited_rooms
+    room = current_room()
     no_visited_rooms += 1
     add_skeletons()
     all_sprites = []
-    for tile in maze.rooms[i].tiles:
+    for tile in room.tiles:
         tile_sprite = Actor(tile.image())
         tile_sprite.pos = tile.pos
         if isinstance(tile,Chest):
             tile_sprite.bottom = tile.bottom
         tile_sprite.name = tile.name
         all_sprites.append(tile_sprite)
-    for enemy in maze.rooms[i].enemies:
+    for enemy in room.enemies:
         all_sprites.append(enemy)
     all_sprites.append(player)
     update_all_sprites(all_sprites)
-    for room in maze.rooms:
-        room.last_visited += 1
-    maze.rooms[i].last_visited = 0
-    maze.rooms[i].visited = True
+    for another_room in maze.rooms:
+        another_room.last_visited += 1
+    room.last_visited = 0
+    room.visited = True
 
 def maze_printable(func):
     def wrapper():
@@ -352,14 +342,14 @@ def maze_printable(func):
         for i, room in enumerate(maze.rooms):
             if(i%maze.width == 0):
                 print("")
-            print(maze.rooms[i], end= "")
+            print(room, end= "")
             if i == room_number:
                 print("*",end= "  ")
-            elif maze.rooms[i].no_skeletons == 1:
+            elif room.no_skeletons == 1:
                 print("s",end= "  ")
-            elif maze.rooms[i].no_skeletons == 2:
+            elif room.no_skeletons == 2:
                 print("ss",end= " ")
-            elif maze.rooms[i].skeleton_is_allowed():
+            elif room.skeleton_is_allowed():
                 print(1,end= "  ")
             else:
                 print(0,end= "  ")
@@ -388,14 +378,14 @@ def spawn_skeleton():
         x = SCENE_WIDTH/2 + (SCENE_WIDTH/4-30)*(2*randint(0,1)-1)+randint(-(SCENE_WIDTH)/4+150,(SCENE_WIDTH)/4-150)
         skeleton.change_x(x)
         can_spawn = True
-        for enemy in maze.rooms[room_number].enemies:
+        for enemy in current_room().enemies:
             if iscolliding(skeleton,enemy,10):
                 can_spawn = False
                 break
         if can_spawn:
             break
     if can_spawn:
-        maze.rooms[room_number].enemies.append(skeleton)
+        current_room().enemies.append(skeleton)
 
 def skeleton_chance(x):
     return min(2**(2*(x-3)) + 0.075, 0.75)
@@ -433,7 +423,7 @@ def pressing_up_or_down():
                 if(thing.name == "ladder" and maze.rooms[room_number].north() == 1):
                     sounds.ladder.ladder.play()
                     room_number -= maze.width
-                    build_room(room_number)
+                    build_room()
                     break
                 elif(thing.name =="door"):
                     exit_game()
@@ -443,7 +433,7 @@ def pressing_up_or_down():
                 if thing.name == "ladder":
                     sounds.ladder.ladder.play()
                     room_number += maze.width
-                    build_room(room_number)
+                    build_room()
                     break
         go_up,go_down = False, False
 
@@ -460,11 +450,11 @@ def realign_player():
     if(player.x < player.hitbox.width*0.6 and maze.rooms[room_number].west() == 1):
         room_number -= 1
         player.change_x(SCENE_WIDTH - player.hitbox.width*0.61)
-        build_room(room_number)
+        build_room()
     elif(player.x > SCENE_WIDTH - player.hitbox.width*0.6 and maze.rooms[room_number].east() == 1):
         room_number += 1
         player.change_x(player.hitbox.width*0.61)
-        build_room(room_number)
+        build_room()
 
 def entity_move():
     for sprite in all_sprites:
@@ -474,7 +464,7 @@ def entity_move():
                 all_sprites.remove(sprite)
                 maze.rooms[room_number].no_skeletons -= 1
                 if maze.rooms[room_number].has_closed_chest:
-                    open_chest(maze.rooms[room_number].tiles[maze.rooms[room_number].animated_tiles_indexes[0]])
+                    open_chest(maze.get_chest_for(room_number))
             else:
                 if (sprite.state == "running" or sprite.frame == 0):
                     if sprite.x > player.x:

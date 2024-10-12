@@ -104,3 +104,8 @@ class Maze:
                         else:
                             next_room.append((j+(k-2)*self.width,d+1))
         return rooms_in_range
+    
+    def get_chest_for(self, room_number):
+        current_room = self.rooms[room_number]
+        chest_index = current_room.animated_tiles_indexes[0]
+        return current_room.tiles[chest_index]

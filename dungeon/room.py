@@ -1,3 +1,7 @@
+from tile import Chest
+from constants import SCENE_WIDTH
+from random import randint
+
 symbols = {
 (1,1,1,1):"┼",
 (1,1,1,0):"┴",
@@ -40,17 +44,22 @@ class Room:
     def no_of_exits(self):
         return sum(self.exits)
     def west(self):
-        return self.exits[0]
+        return self.exits[0] == 1
     def north(self):
-        return self.exits[1]
+        return self.exits[1] == 1
     def east(self):
-        return self.exits[2]
+        return self.exits[2] == 1
     def south(self):
-        return self.exits[3]
+        return self.exits[3] == 1
+    def is_dead_end(self):
+        return self.no_of_exits() == 1
     def set_distance(self,distance):
         self.distance = distance
     def chest_type(self):
-        return min(self.distance//7, 3)
+        chest_type = min(self.distance//7, 3)
+        if self.no_of_exits() > 1:
+            chest_type -= 1
+        return chest_type
     def chest_is_allowed(self, max_allowed_distance):
         return (self.distance > 7 and 
                 not self.is_chest_in_range and
@@ -64,3 +73,16 @@ class Room:
     def tiles_add(self,tile):
         self.tiles.append(tile)
         self.tiles_names.append(tile.name)
+
+    def add_chest(self):
+        x = SCENE_WIDTH*(randint(0,1)*2+1)/4
+        if self.is_dead_end():
+            if(self.east()):
+                x = SCENE_WIDTH/4
+            elif(self.west()):
+                x = SCENE_WIDTH*3/4
+        elif(not self.north() and not self.south()):
+            x = SCENE_WIDTH/2
+        self.tiles_add(Chest("chest",self.chest_type(),x))
+        self.animated_tiles_indexes.append(len(self.tiles) - 1)
+        self.has_closed_chest = True
