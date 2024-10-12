@@ -36,6 +36,8 @@ loot_icons = []
 hearts = []
 
 chest_icon = Actor("ui/chest_icon")
+ui_bar_left = Rect(0,0,UI_BAR_WIDTH,HEIGHT)
+ui_bar_right = Rect(WIDTH - UI_BAR_WIDTH,0,UI_BAR_WIDTH,HEIGHT)
 
 background = Actor("background",(WIDTH/2,HEIGHT/2))
 map_background = Actor("map_background",(WIDTH/2,HEIGHT/2))
@@ -466,13 +468,13 @@ def realign_player():
                 player.change_state("idle")
             player.update_colliding()
             break
-    if(player.x < player.hitbox.width/2 and maze.rooms[room_number].west() == 1):
+    if(player.x < player.hitbox.width*0.6 and maze.rooms[room_number].west() == 1):
         room_number -= 1
-        player.change_x(SCENE_WIDTH - player.hitbox.width/2)
+        player.change_x(SCENE_WIDTH - player.hitbox.width*0.61)
         build_room(room_number)
-    elif(player.x > SCENE_WIDTH - player.hitbox.width/2 and maze.rooms[room_number].east() == 1):
+    elif(player.x > SCENE_WIDTH - player.hitbox.width*0.6 and maze.rooms[room_number].east() == 1):
         room_number += 1
-        player.change_x(player.hitbox.width/2)
+        player.change_x(player.hitbox.width*0.61)
         build_room(room_number)
 
 def entity_move():
@@ -619,14 +621,7 @@ def on_mouse_move(pos):
     mouse_hitbox.left = pos[0]-1
     mouse_hitbox.top = pos[1]-1
 
-load_mazes()
-make_ui()
-set_up_game()
-
-#show_hitboxes = True # for debugging only
-def draw():
-    screen.clear()
-    screen.fill((58,58,58))
+def draw_sceen():
     background.draw()
     for sprite in all_sprites:
         sprite.x += UI_BAR_WIDTH
@@ -642,6 +637,10 @@ def draw():
     player.x += UI_BAR_WIDTH
     player.draw()
     player.x -= UI_BAR_WIDTH
+
+def draw_ui():
+    pygame.draw.rect(screen.surface, (58,58,58), ui_bar_left)
+    pygame.draw.rect(screen.surface, (58,58,58), ui_bar_right)
     chest_icon.draw()
     for i in range(len(hearts)):
         if player.health > i:
@@ -655,6 +654,16 @@ def draw():
         thing.draw()
         screen.draw.text(str(loot_collected[thing.name]), midleft = (thing.pos[0] + thing.width/2, thing.pos[1]), color="white", fontsize=50)
     screen.draw.text(str(number_of_found_chests) + "/" + str(number_of_chests), center = chest_icon.pos, color="yellow", fontsize=50)
+
+load_mazes()
+make_ui()
+set_up_game()
+
+#show_hitboxes = True # for debugging only
+def draw():
+    screen.clear()
+    draw_sceen()
+    draw_ui()
     if map_open:
         map_background.draw()
         maze_map.draw(maze)

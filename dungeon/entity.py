@@ -174,7 +174,7 @@ class Enemy(Entity):
             self.dir = LEFT
         else:
             self.dir = RIGHT
-    
+
     def update_hitboxes(self):
         super().update_hitboxes()
         if(self.state == "attack1" or self.state == "attack2"):
@@ -187,7 +187,7 @@ class Enemy(Entity):
         else:
             self.attack_hitbox.height = self._hitbox_height
             self.attack_hitbox.bottom = self.bottom
-    
+
     def animate(self, dt):
         super().animate(dt)
         super().update_colliding()
@@ -198,7 +198,7 @@ class Enemy(Entity):
                     object.change_state("hit")
                     self.change_state("idle")
                     super().animate(dt)
-    
+
     def attack(self):
         if (self.state == "running" or self.frame == 0):
             if self.attack_progress%3 == 0:
