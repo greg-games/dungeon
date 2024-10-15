@@ -1,0 +1,8 @@
+chance = 0.15
+max_number_on_screan = 4
+min_distance = 20
+x_start = 120 + width/2
+x_end = SCENE_WIDTH - 120 - width/2
+y_start = HEIGHT-120
+y_end = HEIGHT-120
+can_collide = "brick"

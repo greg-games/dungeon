@@ -14,7 +14,7 @@ class Addon(Actor):
             for line in properties.readlines():
                 prop, value = line.split("=")
                 if "\"" in value:
-                    self.__setattr__(prop.strip(),value.strip()) 
+                    self.__setattr__(prop.strip(),value.strip().strip("\"")) 
                 else:
                     self.__setattr__(prop.strip(),eval(value.strip()))
 

@@ -233,10 +233,11 @@ def make_tiles():
         make_room_frame(room)
         if (i == 0):
             make_door()
-        make_addons(room)
-        if(i > 0 and room.is_dead_end()):
+        elif room.is_dead_end():
             make_chests(room)
     add_more_chests()
+    for room in maze.rooms:
+        make_addons(room)
 
 def make_room_frame(room):
     brick = Actor("tiles/brick/variant_0")
@@ -269,19 +270,20 @@ def make_room_frame(room):
 def make_addons(room):
     for addon in all_addons:
         for _ in range(addon.max_number_on_screan):
-            if(random() > 0.5):
-                variant = randrange(0,addon.number_of_variants)
+            if(random() < addon.chance):
+                variant = randrange(addon.number_of_variants)
                 new_addon = TileAddon(addon.name,variant)
                 for _ in range(20):
                     new_addon.pos = (randint(addon.x_start,addon.x_end),randint(addon.y_start,addon.y_end))
                     pos_avaible = True
                     for tile in room.tiles:
-                        distance = 0
-                        if(tile.name == addon.name):
-                            distance = addon.min_distance
-                        if(iscolliding(Actor(new_addon.image(),new_addon.pos),Actor(tile.image(),tile.pos),distance)):
-                            pos_avaible = False
-                            break
+                        if (not hasattr(addon,"can_collide") or tile.name != addon.can_collide):
+                            distance = 0
+                            if(tile.name == addon.name):
+                                distance = addon.min_distance
+                            if(iscolliding(Actor(new_addon.image(),new_addon.pos),Actor(tile.image(),tile.pos),distance)):
+                                pos_avaible = False
+                                break
                     if pos_avaible:
                         room.tiles_add(new_addon)
                         break

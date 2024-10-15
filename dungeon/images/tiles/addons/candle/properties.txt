@@ -1,3 +1,4 @@
+chance = 0.6
 max_number_on_screan = 2
 min_distance = 200
 x_start = SCENE_WIDTH/10
