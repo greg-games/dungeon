@@ -55,8 +55,11 @@ class Room:
         return self.no_of_exits() == 1
     def set_distance(self,distance):
         self.distance = distance
-    def chest_type(self,difficulty):
-        chest_type = min(self.distance//7,min(difficulty//3+1, 3))
+    def chest_type(self,floor):
+        if floor <= 4:
+            chest_type = min(self.distance//7,1)
+        else:
+            chest_type = min(self.distance//7,3)
         if self.no_of_exits() > 1:
             chest_type -= 1
         return chest_type
@@ -74,7 +77,7 @@ class Room:
         self.tiles.append(tile)
         self.tiles_names.append(tile.name)
 
-    def add_chest(self, difficulty):
+    def add_chest(self, floor):
         x = SCENE_WIDTH*(randint(0,1)*2+1)/4
         if self.is_dead_end():
             if(self.east()):
@@ -83,6 +86,6 @@ class Room:
                 x = SCENE_WIDTH*3/4
         elif(not self.north() and not self.south()):
             x = SCENE_WIDTH/2
-        self.tiles_add(Chest("chest",self.chest_type(difficulty),x))
+        self.tiles_add(Chest("chest",self.chest_type(floor),x))
         self.animated_tiles_indexes.append(len(self.tiles) - 1)
         self.has_closed_chest = True

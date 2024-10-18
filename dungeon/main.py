@@ -23,7 +23,7 @@ from maze_map import MazeMap
 
 seed(None)
 
-game_ended = False
+game_ended = True
 
 dt = 1
 clock = pygame.time.Clock()
@@ -38,7 +38,7 @@ chest_icon = Actor("ui/chest_icon")
 ui_bar_left = Rect(0,0,UI_BAR_WIDTH,HEIGHT)
 ui_bar_right = Rect(WIDTH - UI_BAR_WIDTH,0,UI_BAR_WIDTH,HEIGHT)
 
-background = Actor("background",(WIDTH/2,HEIGHT/2))
+background = Actor("background/game",(WIDTH/2,HEIGHT/2))
 
 map_open = False
 maze_map = None
@@ -49,7 +49,7 @@ go_right = False
 go_up = False
 go_down = False
 
-difficulty = 0
+floor = 0
 
 all_loot = []
 
@@ -105,7 +105,12 @@ def make_ui():
     make_buttons()
 
 def make_buttons():
-    global duck_button, jump_button, attack_button, left_button, right_button, up_button, down_button, map_button
+    global duck_button, jump_button, attack_button, left_button, right_button, up_button, down_button, map_button, play_button
+
+    play_button = Button("play",
+                        on_release=(lambda a: set_up_game(), "NO_VARIABLE", "NO_VARIABLE"))
+    play_button.set_pos((WIDTH/2,HEIGHT*3/4))
+
     map_button = Button("map",
                         on_click=(lambda a: toggle_map(), "NO_VARIABLE", "NO_VARIABLE"))
     map_button.set_pos((WIDTH-UI_BAR_WIDTH+map_button.width,HEIGHT-map_button.height))
@@ -196,13 +201,13 @@ def set_up_game():
     global number_of_chests
     global number_of_found_chests
     global no_visited_rooms
-    global difficulty
+    global floor
 
-    difficulty += 1
+    floor += 1
 
     maze_number = -1 #int(input("maze_number: "))
     if maze_number == -1:
-        maze = Maze(min(randint(difficulty+4,difficulty+6),13),min(randint(difficulty//2+2,difficulty//2+4),8),[])
+        maze = Maze(min(randint(floor+4,floor+6),13),min(randint(floor//2+2,floor//2+4),8),[])
     else: 
         maze = mazes[maze_number]
     print(maze)
@@ -215,6 +220,11 @@ def set_up_game():
 
     player.colliding = []
 
+    background.image = "background/game"
+
+    for button in all_buttons:
+        button.show()
+    play_button.hide()
     attack_button.disable()
 
     all_sprites = []
@@ -295,7 +305,7 @@ def make_addons(room):
 
 def make_chests(room):
     global number_of_chests
-    room.add_chest(difficulty)
+    room.add_chest(floor)
     number_of_chests += 1
 
 def add_more_chests():
@@ -309,7 +319,7 @@ def add_more_chests():
     for i,room in enumerate(maze.rooms):
         max_allowed_distance = randrange(maze.size)
         if(room.chest_is_allowed(max_allowed_distance)):        
-            room.add_chest(difficulty)
+            room.add_chest(floor)
             number_of_chests += 1
             for room_in_range in maze.rooms_in_range(i,3):
                 room_in_range.is_chest_in_range = True
@@ -362,6 +372,7 @@ def maze_printable(func):
                 print(0,end= "  ")
         print(str(no_visited_rooms) + " / " + str(maze.size),end= " ")
         print(str(round(skeleton_chance(no_visited_rooms/maze.size)*100)) + "%")
+        print(f"floor = {floor}")
     return wrapper
 
 @maze_printable
@@ -379,7 +390,7 @@ def add_skeletons():
         spawn_skeleton()
 
 def spawn_skeleton():
-    skeleton = Enemy("skeleton","variant_0",difficulty)
+    skeleton = Enemy("skeleton","variant_0",floor)
     skeleton.y = HEIGHT - 120 - skeleton.height/2
     for _ in range(1000):
         x = SCENE_WIDTH/2 + (SCENE_WIDTH/4-30)*(2*randint(0,1)-1)+randint(-(SCENE_WIDTH)/4+150,(SCENE_WIDTH)/4-150)
@@ -576,10 +587,15 @@ def exit_game():
     game_ended = True
     set_up_game()
 
-def on_death():
-    global difficulty
-    difficulty = 0
+def title_screen():
+    global floor, game_ended
+    game_ended = True
+    background.image = "background/title"
+    floor = 0
     player.health = 5
+    for button in all_buttons:
+        button.hide()
+    play_button.show()
     for key in loot_collected.keys():
         loot_collected[key] = 0
 
@@ -610,7 +626,6 @@ def on_mouse_move(pos):
     mouse_hitbox.top = pos[1]-1
 
 def draw_sceen():
-    background.draw()
     for sprite in all_sprites:
         sprite.x += UI_BAR_WIDTH
         sprite.draw()
@@ -627,50 +642,54 @@ def draw_sceen():
     player.x -= UI_BAR_WIDTH
 
 def draw_ui():
-    pygame.draw.rect(screen.surface, (58,58,58), ui_bar_left)
-    pygame.draw.rect(screen.surface, (58,58,58), ui_bar_right)
-    chest_icon.draw()
-    for i in range(len(hearts)):
-        if player.health > i:
-            hearts[i].draw()
-        else:
-            hearts[i].lost.draw()
+    if not game_ended:
+        pygame.draw.rect(screen.surface, (58,58,58), ui_bar_left)
+        pygame.draw.rect(screen.surface, (58,58,58), ui_bar_right)
+        chest_icon.draw()
+        for i in range(len(hearts)):
+            if player.health > i:
+                hearts[i].draw()
+            else:
+                hearts[i].lost.draw()
+        for thing in loot_icons:
+            thing.draw()
+            screen.draw.text(str(loot_collected[thing.name]), midleft = (thing.pos[0] + thing.width/2, thing.pos[1]), color="white", fontsize=50)
+        screen.draw.text(str(number_of_found_chests) + "/" + str(number_of_chests), center = chest_icon.pos, color="yellow", fontsize=50)
     for button in all_buttons:
+        if button.is_visible:
             button.background.draw()
             button.draw()
-    for thing in loot_icons:
-        thing.draw()
-        screen.draw.text(str(loot_collected[thing.name]), midleft = (thing.pos[0] + thing.width/2, thing.pos[1]), color="white", fontsize=50)
-    screen.draw.text(str(number_of_found_chests) + "/" + str(number_of_chests), center = chest_icon.pos, color="yellow", fontsize=50)
 
 load_mazes()
 make_ui()
-set_up_game()
+title_screen()
 
 #show_hitboxes = True # for debugging only
 def draw():
     screen.clear()
-    draw_sceen()
+    background.draw()
+    if not game_ended:
+        draw_sceen()
+        if map_open:
+            maze_map.draw(maze)
+    else:
+        Actor("title",(WIDTH/2,HEIGHT/3)).draw()
     draw_ui()
-    if map_open:
-        maze_map.draw(maze)
 
 def update():
-    global game_ended, dt
+    global dt
     dt = clock.tick(60)
+    update_buttons()
     if not game_ended:
         pressing_up_or_down()
         change_player_speed()
         entity_move()
-        update_buttons()
         animate_tiles()
         animate_entities()
         animate_loot()
         play_sounds()
         if player.is_dead:
-            game_ended = True
-            on_death()
-            set_up_game()
+            title_screen()
 
 async def main():
     pgzrun.go()

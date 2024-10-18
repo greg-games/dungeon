@@ -32,6 +32,7 @@ class Button(Actor):
                              "released":on_release[2]}
         self.mode = "unpressed"
         self.can_interact = True
+        self.is_visible = True
         self.name = name
         super().__init__(f"ui/buttons/{name}")
         background = self._orig_surf.copy()
@@ -80,4 +81,12 @@ class Button(Actor):
 
     def enable(self):
         self.image = f"ui/buttons/{self.name}"
+        self.can_interact = True
+    
+    def hide(self):
+        self.is_visible = False
+        self.can_interact = False
+
+    def show(self):
+        self.is_visible = True
         self.can_interact = True
