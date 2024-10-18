@@ -49,6 +49,8 @@ go_right = False
 go_up = False
 go_down = False
 
+difficulty = 0
+
 all_loot = []
 
 loot_collected = {
@@ -194,10 +196,13 @@ def set_up_game():
     global number_of_chests
     global number_of_found_chests
     global no_visited_rooms
+    global difficulty
+
+    difficulty += 1
 
     maze_number = -1 #int(input("maze_number: "))
     if maze_number == -1:
-        maze = Maze(randint(10,13),randint(4,6),[])
+        maze = Maze(min(randint(difficulty+4,difficulty+6),13),min(randint(difficulty//2+2,difficulty//2+4),8),[])
     else: 
         maze = mazes[maze_number]
     print(maze)
@@ -290,7 +295,7 @@ def make_addons(room):
 
 def make_chests(room):
     global number_of_chests
-    room.add_chest()
+    room.add_chest(difficulty)
     number_of_chests += 1
 
 def add_more_chests():
@@ -304,7 +309,7 @@ def add_more_chests():
     for i,room in enumerate(maze.rooms):
         max_allowed_distance = randrange(maze.size)
         if(room.chest_is_allowed(max_allowed_distance)):        
-            room.add_chest()
+            room.add_chest(difficulty)
             number_of_chests += 1
             for room_in_range in maze.rooms_in_range(i,3):
                 room_in_range.is_chest_in_range = True
@@ -374,7 +379,7 @@ def add_skeletons():
         spawn_skeleton()
 
 def spawn_skeleton():
-    skeleton = Enemy("skeleton","variant_0")
+    skeleton = Enemy("skeleton","variant_0",difficulty)
     skeleton.y = HEIGHT - 120 - skeleton.height/2
     for _ in range(1000):
         x = SCENE_WIDTH/2 + (SCENE_WIDTH/4-30)*(2*randint(0,1)-1)+randint(-(SCENE_WIDTH)/4+150,(SCENE_WIDTH)/4-150)
@@ -427,7 +432,7 @@ def pressing_up_or_down():
                     room_number -= maze.width
                     build_room()
                     break
-                elif(thing.name =="door"):
+                elif(thing.name =="door" and number_of_chests == number_of_found_chests):
                     exit_game()
                     break
         elif(go_down and maze.rooms[room_number].south() == 1):
@@ -572,6 +577,8 @@ def exit_game():
     set_up_game()
 
 def on_death():
+    global difficulty
+    difficulty = 0
     player.health = 5
     for key in loot_collected.keys():
         loot_collected[key] = 0

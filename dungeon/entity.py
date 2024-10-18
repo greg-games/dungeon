@@ -1,6 +1,6 @@
 from pgzero.actor import Actor
 from pgzero.rect import Rect
-from random import randrange, random
+from random import randrange, random, randint
 import os
 from constants import LEFT, RIGHT, SOUND_NOT_PLAYING, SOUND_WILL_BE_PLAYED, SCENE_WIDTH
 from global_functions import iscolliding, is_in_browser
@@ -161,12 +161,19 @@ class Player(Entity):
                     object.change_state("hit")                  
 
 class Enemy(Entity):
-    def __init__(self,name,variant):
+    def __init__(self,name,variant,difficulty):
         self.name = name
         self.variant = variant
-        super().__init__(name,variant,0.2,3, hitbox_offset = -1/3, attack_hitbox_width = 0.8,
+        difficulty -= 1
+        if(difficulty < 4):
+            health = randint(1,2)
+        else:
+            health = randint(2,3)
+        super().__init__(name, variant, running_speed=0.2, health=health,
+                         hitbox_offset = -1/3, attack_hitbox_width = 0.8,
                          idle = 1.1, attack1 = 0.9, attack2 = 0.92, hit = 0.75, hitbox_width = 1/2, die = 1.4)
         self.attack_progress = 1
+        self.no_attacks = 1
 
     def go_to_player(self,player_x,dt):
         self.speed = self.running_speed*dt
@@ -201,7 +208,7 @@ class Enemy(Entity):
 
     def attack(self):
         if (self.state == "running" or self.frame == 0):
-            if self.attack_progress%3 == 0:
+            if self.attack_progress%(self.no_attacks+1) == 0:
                 self.change_state("idle")
             elif (random() < 0.5):
                 self.change_state("attack1")
