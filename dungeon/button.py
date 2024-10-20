@@ -1,6 +1,7 @@
 from pgzero.actor import Actor
 from pygame import Rect, surfarray
-from global_functions import iscolliding
+from global_functions import *
+from constants import *
 
 all_buttons = []
 buttons_in = dict()
@@ -12,24 +13,28 @@ def color_surface(surface, red, green, blue):
     arr[:,:,1] = green
     arr[:,:,2] = blue
 
+
+def buttons_on(event):
+    for button in all_buttons:
+        if event == "pressed":
+            button.on_press()
+        elif event == "unpressed":
+            button.on_unpress()
+        elif event == "clicked":
+            button.on_click(mouse_hitbox)
+        elif event == "released":
+            button.on_release(mouse_hitbox)
+
 class Button(Actor):
     def __init__(self, name,
-                 on_click:tuple = (None,None,None),
-                 on_release:tuple = (None,None,None),
-                 on_press:tuple = (None,None,None),
-                 on_unpress:tuple = (None,None,None)):
-        self._pressed = on_press[0]
-        self._unpressed = on_unpress[0]
-        self._clicked = on_click[0]
-        self._released = on_release[0]
-        buttons_in[name] = {"pressed":on_press[1],
-                            "unpressed":on_unpress[1],
-                            "clicked":on_click[1],
-                            "released":on_release[1]}
-        buttons_out[name] = {"pressed":on_press[2],
-                             "unpressed":on_unpress[2],
-                             "clicked":on_click[2],
-                             "released":on_release[2]}
+                 on_click = None,
+                 on_release = None,
+                 on_press = None,
+                 on_unpress = None):
+        self._pressed = on_press
+        self._unpressed = on_unpress
+        self._clicked = on_click
+        self._released = on_release
         self.mode = "unpressed"
         self.can_interact = True
         self.is_visible = True
@@ -52,29 +57,29 @@ class Button(Actor):
         self.hitbox.center = pos
         self.background.pos = pos
 
-    def on_release(self,mouse_hitbox,input):
+    def on_release(self,mouse_hitbox):
         if (iscolliding(mouse_hitbox, self.hitbox) and self.can_interact
             and self.mode != "unpressed"):
             self.mode = "unpressed"
             self._orig_surf.set_alpha(255)
             if self._released != None:
-                return self._released(input)
+                self._released()
 
-    def on_click(self,mouse_hitbox,input):
+    def on_click(self,mouse_hitbox):
         if (iscolliding(mouse_hitbox, self.hitbox) and self.can_interact
             and self.mode != "pressed"):
             self.mode = "pressed"
             self._orig_surf.set_alpha(127)  
             if self._clicked != None:
-                return self._clicked(input)
+                self._clicked()
 
-    def on_unpress(self,input):
+    def on_unpress(self,):
         if (self.mode == "unpressed" and self._unpressed != None and self.can_interact):
-            return self._unpressed(input)
+            self._unpressed()
 
-    def on_press(self,input):
+    def on_press(self,):
         if (self.mode == "pressed" and self._pressed != None and self.can_interact):
-            return self._pressed(input)
+            self._pressed()
 
     def disable(self):
         self.image = f"ui/buttons/{self.name}_disabled"

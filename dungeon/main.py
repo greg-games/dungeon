@@ -4,13 +4,14 @@ import pygame.surfarray
 import asyncio
 import numpy
 import time
+import touch
 
 from pgzero.actor import Actor
 from pgzero.rect import Rect
 from pgzero.loaders import sounds
 from random import *
 from constants import *
-from global_functions import iscolliding, is_in_browser
+from global_functions import *
 pygame.display.set_mode((WIDTH, HEIGHT))
 from maze import Maze
 from room import Room
@@ -18,7 +19,7 @@ from tile import Tile, TileAddon, AnimatedTile, Chest, Door
 from addon import Addon, all_addons
 from entity import Entity, Player, Enemy, update_all_sprites
 from loot import Loot
-from button import Button, all_buttons, buttons_in, buttons_out
+from button import Button, all_buttons, buttons_on
 from maze_map import MazeMap
 
 seed(None)
@@ -42,12 +43,6 @@ background = Actor("background/game",(WIDTH/2,HEIGHT/2))
 
 map_open = False
 maze_map = None
-
-mouse_hitbox = Rect((0,0),(2, 2))
-go_left = False
-go_right = False
-go_up = False
-go_down = False
 
 floor = 0
 
@@ -108,68 +103,66 @@ def make_buttons():
     global duck_button, jump_button, attack_button, left_button, right_button, up_button, down_button, map_button, play_button
 
     play_button = Button("play",
-                        on_release=(lambda a: set_up_game(), "NO_VARIABLE", "NO_VARIABLE"))
+                        on_release= lambda: set_up_game())
     play_button.set_pos((WIDTH/2,HEIGHT*3/4))
 
     map_button = Button("map",
-                        on_click=(lambda a: toggle_map(), "NO_VARIABLE", "NO_VARIABLE"))
+                        on_click= lambda: toggle_map())
     map_button.set_pos((WIDTH-UI_BAR_WIDTH+map_button.width,HEIGHT-map_button.height))
 
     duck_button = Button("duck",
-                         on_click=(lambda a: player.change_state("duck") 
+                         on_click= lambda: player.change_state("duck") 
                                    if player.state == "idle" or player.state == "running" 
-                                   else None, "NO_VARIABLE", "NO_VARIABLE"))
+                                   else None)
     duck_button.set_pos((WIDTH-duck_button.width,HEIGHT/2+duck_button.height/2))
 
     jump_button = Button("jump",
-                         on_click=(lambda a: player.change_state("jump")
+                         on_click= lambda: player.change_state("jump")
                                    if player.state == "idle" or player.state == "running"
-                                   else None, "NO_VARIABLE", "NO_VARIABLE"))
+                                   else None)
     jump_button.set_pos((WIDTH-jump_button.width,HEIGHT/2-jump_button.height/2))
 
     attack_button = Button("attack",
-                           on_click=(lambda a: player.change_state("attack1")
+                           on_click= lambda: player.change_state("attack1")
                                      if player.state == "idle" or player.state == "running"
-                                     else None, "NO_VARIABLE", "NO_VARIABLE"))
+                                     else None)
     attack_button.set_pos((WIDTH-attack_button.width*2,HEIGHT/2))
     
     move_button_center = (Actor("ui/buttons/left").width*3/2,HEIGHT - Actor("ui/buttons/left").height*3/2)
 
     left_button = Button("left",
-                         on_click=(lambda a: True, "NO_VARIABLE", "go_left"),
-                         on_release=(lambda a: False, "NO_VARIABLE", "go_left"))
+                         on_click=lambda: set_go_left(True),
+                         on_release=lambda: set_go_left(False))
     left_button.set_pos((move_button_center[0] - left_button.width,move_button_center[1]))
 
     right_button = Button("right",
-                          on_click=(lambda a: True, "NO_VARIABLE", "go_right"),
-                          on_release=(lambda a: False, "NO_VARIABLE", "go_right"))
+                          on_click=lambda: set_go_right(True),
+                          on_release=lambda: set_go_right(False))
     right_button.set_pos((move_button_center[0] + right_button.width,move_button_center[1]))
 
     up_button = Button("up",
-                       on_click=(lambda a: (not go_down) and player.can_move, "NO_VARIABLE", "go_up"))
+                       on_click= lambda: set_go_up((not go_down) and player.can_move))
     up_button.set_pos((move_button_center[0],move_button_center[1]-up_button.height))
 
     down_button = Button("down",
-                         on_click=(lambda a: (not go_up) and player.can_move, "NO_VARIABLE", "go_down"))
+                         on_click=lambda: set_go_down((not go_up) and player.can_move))
     down_button.set_pos((move_button_center[0],move_button_center[1]+down_button.height))
 
-def buttons_on(event):
-    for button in all_buttons:
-        if event == "pressed":
-            function = lambda input: button.on_press(input)
-        elif event == "unpressed":
-            function = lambda input: button.on_unpress(input)
-        elif event == "clicked":
-            function = lambda input: button.on_click(mouse_hitbox,input)
-        elif event == "released":
-            function = lambda input: button.on_release(mouse_hitbox,input)
-        
-        if buttons_out[button.name][event] != None:
-            x = function(globals()[buttons_in[button.name][event]])
-            if x != None:
-                globals()[buttons_out[button.name][event]] = x
-        else:
-            function(None)
+def set_go_left(val):
+    global go_left
+    go_left = val
+
+def set_go_right(val):
+    global go_right
+    go_right = val
+
+def set_go_up(val):
+    global go_up
+    go_up = val
+
+def set_go_down(val):
+    global go_down
+    go_down = val
 
 def current_room():
     return maze.rooms[room_number]
@@ -619,7 +612,6 @@ def on_key_down():
     if keyboard.m:
         toggle_map()
 
-fingers = {}
 last_mouse_pos = (0,0)
 
 def on_mouse_up():
@@ -632,25 +624,6 @@ def on_mouse_down(pos):
     last_mouse_pos = pos
     if(mouse.LEFT):
         buttons_on("clicked")
-
-def on_mouse_move(pos):
-    move_mouse_hitbox(pos)
-
-def move_mouse_hitbox(pos):
-        mouse_hitbox.left = pos[0]-1
-        mouse_hitbox.top = pos[1]-1
-
-def on_finger_down(event):
-    x = event.x * WIDTH
-    y = event.y * HEIGHT
-    fingers[event.finger_id] = (x, y)
-    move_mouse_hitbox((x,y))
-    buttons_on("clicked")
-
-def on_finger_up(event):
-    pos = fingers.pop(event.finger_id, None)
-    move_mouse_hitbox(pos)
-    buttons_on("released")
 
 def draw_sceen():
     for sprite in all_sprites:
@@ -693,7 +666,7 @@ load_mazes()
 make_ui()
 title_screen()
 
-show_hitboxes = True # for debugging only
+#show_hitboxes = True # for debugging only
 def draw():
     screen.clear()
     background.draw()
@@ -719,44 +692,6 @@ def update():
         play_sounds()
         if player.is_dead:
             title_screen()
-
-from pgzrun import run_mod
-from pgzero.game import PGZeroGame
-import sys
-
-pgzero_game = None
-
-def new_inject_global_handlers(self):
-    self.handlers[pygame.QUIT] = lambda e: sys.exit(0)
-    self.handlers[pygame.VIDEOEXPOSE] = lambda e: None
-
-    user_key_down = self.handlers.get(pygame.KEYDOWN)
-    user_key_up = self.handlers.get(pygame.KEYUP)
-
-    def key_down(event):
-        if event.key == pygame.K_q and \
-                event.mod & (pygame.KMOD_CTRL | pygame.KMOD_META):
-            sys.exit(0)
-        self.keyboard._press(event.key)
-        if user_key_down:
-            return user_key_down(event)
-
-    def key_up(event):
-        self.keyboard._release(event.key)
-        if user_key_up:
-            return user_key_up(event)
-
-    self.handlers[pygame.KEYDOWN] = key_down
-    self.handlers[pygame.KEYUP] = key_up
-    self.handlers[pygame.FINGERDOWN] = on_finger_down
-    self.handlers[pygame.FINGERUP] = on_finger_up
-
-def my_run_mod(mod, **kwargs):
-    pgzero_game = PGZeroGame(mod, **kwargs)
-    pgzero_game.inject_global_handlers = new_inject_global_handlers.__get__(pgzero_game, PGZeroGame)
-    pgzero_game.run()
-
-pgzrun.run_mod = my_run_mod
 
 async def main():
     pgzrun.go()
