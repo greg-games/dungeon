@@ -634,8 +634,8 @@ def move_mouse_hitbox(pos):
         mouse_hitbox.top = pos[1]-1
 
 def on_finger_down(event):
-    x = event.x * HEIGHT
-    y = event.y * WIDTH
+    x = event.x * WIDTH
+    y = event.y * HEIGHT
     fingers[event.finger_id] = (x, y)
     move_mouse_hitbox((x,y))
     buttons_on("clicked")
