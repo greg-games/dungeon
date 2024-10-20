@@ -140,8 +140,11 @@ class Player(Entity):
 
     def move(self):
         self.update_hitboxes()
-        if(self.state == "idle" or self.state == "running"):
+        if(self.state in ["idle","running"]):
             super().move()
+        elif(self.state == "jump"):
+            self.change_x(self.x + self.speed*self.dir)
+            self.change_state("jump",self.dir)
 
     def animate(self, dt):
         if(self.frame + self.frame_speed[self.state]*dt > self._no_frames[self.state] - 1):

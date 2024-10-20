@@ -423,7 +423,7 @@ def change_player_speed():
     player.speed = 0
     if(((keyboard.left or keyboard.a  or go_left) ^ (keyboard.right or keyboard.d or go_right)) and player.can_move):
         player.speed = player.running_speed*dt
-        if player.state == "running" or player.state == "idle":
+        if(player.state in ["idle","running","jump"]):
             if(keyboard.left or keyboard.a or go_left):
                 if player.dir == RIGHT:
                     player.x -= player.width/20
@@ -431,7 +431,7 @@ def change_player_speed():
             else:
                 if player.dir == LEFT:
                     player.x += player.width/20
-                player.dir = RIGHT           
+                player.dir = RIGHT
 
 def pressing_up_or_down():
     global room_number, go_down, go_up
@@ -607,7 +607,7 @@ def on_key_down():
             go_up = True
         elif keyboard.down or keyboard.s:
             go_down = True
-    if player.state == "idle":
+    if player.state == "idle" or player.state == "running":
         if keyboard.lshift and jump_button.can_interact:
             player.change_state("jump")
         elif keyboard.lctrl and duck_button.can_interact:
@@ -627,6 +627,18 @@ def on_mouse_down(pos):
 def on_mouse_move(pos):
     mouse_hitbox.left = pos[0]-1
     mouse_hitbox.top = pos[1]-1
+
+fingers = {}
+
+def on_finger_down(event):
+    x = event.x * HEIGHT
+    y = event.y * WIDTH
+    fingers[event.finger_id] = x, y
+    print("touched at:",x,y)
+
+def on_finger_up(event):
+    fingers.pop(event.finger_id, None)
+    print("released touch at:",event.finger_id)
 
 def draw_sceen():
     for sprite in all_sprites:
@@ -693,6 +705,19 @@ def update():
         play_sounds()
         if player.is_dead:
             title_screen()
+
+from pgzrun import run_mod
+from pgzero.game import PGZeroGame
+
+pgzero_game = None
+
+def my_run_mod(mod, **kwargs):
+    pgzero_game = PGZeroGame(mod, **kwargs)
+    pgzero_game.handlers[pygame.FINGERDOWN] = on_finger_down
+    pgzero_game.handlers[pygame.FINGERUP] = on_finger_up
+    pgzero_game.run()
+
+pgzrun.run_mod = my_run_mod
 
 async def main():
     pgzrun.go()
