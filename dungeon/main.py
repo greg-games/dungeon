@@ -619,15 +619,15 @@ def on_key_down():
 
 fingers = {}
 
-#def on_mouse_up():
-#    buttons_on("released")
+def on_mouse_up():
+    buttons_on("released")
 
-#def on_mouse_down(pos):
-#    if(mouse.LEFT):
-#        buttons_on("clicked")
+def on_mouse_down(pos):
+    if(mouse.LEFT):
+        buttons_on("clicked")
 
-#def on_mouse_move(pos):
-#    move_mouse_hitbox(pos)
+def on_mouse_move(pos):
+    move_mouse_hitbox(pos)
 
 def move_mouse_hitbox(pos):
         mouse_hitbox.left = pos[0]-1
@@ -637,13 +637,13 @@ def on_finger_down(event):
     x = event.x * HEIGHT
     y = event.y * WIDTH
     fingers[event.finger_id] = (x, y)
-    move_mouse_hitbox((x,y))
-    buttons_on("clicked")
+    #move_mouse_hitbox((x,y))
+    #buttons_on("clicked")
     #print("touched at:",x,y)
 def on_finger_up(event):
     pos = fingers.pop(event.finger_id, None)
-    move_mouse_hitbox(pos)
-    buttons_on("released")
+    #move_mouse_hitbox(pos)
+    #buttons_on("released")
     #print("released touch at:",event.finger_id)
 
 def draw_sceen():
@@ -680,12 +680,14 @@ def draw_ui():
         if button.is_visible:
             button.background.draw()
             button.draw()
+    if show_hitboxes:
+        screen.draw.rect(mouse_hitbox,"blue",3)
 
 load_mazes()
 make_ui()
 title_screen()
 
-#show_hitboxes = True # for debugging only
+show_hitboxes = True # for debugging only
 def draw():
     screen.clear()
     background.draw()
