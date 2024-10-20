@@ -617,36 +617,34 @@ def on_key_down():
     if keyboard.m:
         toggle_map()
 
-if not is_in_browser:
-    def on_mouse_up():
-        buttons_on("released")
+fingers = {}
 
-    def on_mouse_down(pos):
-        if(mouse.LEFT):
-            buttons_on("clicked")
+#def on_mouse_up():
+#    buttons_on("released")
 
-    def on_mouse_move(pos):
-        move_mouse_hitbox(pos)
+#def on_mouse_down(pos):
+#    if(mouse.LEFT):
+#        buttons_on("clicked")
 
-    def move_mouse_hitbox(pos):
+#def on_mouse_move(pos):
+#    move_mouse_hitbox(pos)
+
+def move_mouse_hitbox(pos):
         mouse_hitbox.left = pos[0]-1
         mouse_hitbox.top = pos[1]-1
-else:
-    fingers = {}
-    
-    def on_finger_down(event):
-        x = event.x * HEIGHT
-        y = event.y * WIDTH
-        fingers[event.finger_id] = (x, y)
-        move_mouse_hitbox((x,y))
-        buttons_on("clicked")
-        #print("touched at:",x,y)
-    
-    def on_finger_up(event):
-        pos = fingers.pop(event.finger_id, None)
-        move_mouse_hitbox(pos)
-        buttons_on("released")
-        #print("released touch at:",event.finger_id)
+
+def on_finger_down(event):
+    x = event.x * HEIGHT
+    y = event.y * WIDTH
+    fingers[event.finger_id] = (x, y)
+    move_mouse_hitbox((x,y))
+    buttons_on("clicked")
+    #print("touched at:",x,y)
+def on_finger_up(event):
+    pos = fingers.pop(event.finger_id, None)
+    move_mouse_hitbox(pos)
+    buttons_on("released")
+    #print("released touch at:",event.finger_id)
 
 def draw_sceen():
     for sprite in all_sprites:
