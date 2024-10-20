@@ -614,20 +614,27 @@ def on_key_down():
             player.change_state("duck")
         elif keyboard.space and attack_button.can_interact:
             player.change_state("attack1")
+    if keyboard.space and play_button.can_interact:
+        set_up_game()
     if keyboard.m:
         toggle_map()
 
 fingers = {}
+last_mouse_pos = (0,0)
 
-#def on_mouse_up():
-#    buttons_on("released")
+def on_mouse_up():
+    move_mouse_hitbox(last_mouse_pos)
+    buttons_on("released")
 
-#def on_mouse_down(pos):
-#    if(mouse.LEFT):
-#        buttons_on("clicked")
+def on_mouse_down(pos):
+    global last_mouse_pos
+    move_mouse_hitbox(pos)
+    last_mouse_pos = pos
+    if(mouse.LEFT):
+        buttons_on("clicked")
 
-#def on_mouse_move(pos):
-#    move_mouse_hitbox(pos)
+def on_mouse_move(pos):
+    move_mouse_hitbox(pos)
 
 def move_mouse_hitbox(pos):
         mouse_hitbox.left = pos[0]-1
@@ -639,12 +646,11 @@ def on_finger_down(event):
     fingers[event.finger_id] = (x, y)
     move_mouse_hitbox((x,y))
     buttons_on("clicked")
-    print("touched at:",x,y)
+
 def on_finger_up(event):
     pos = fingers.pop(event.finger_id, None)
     move_mouse_hitbox(pos)
     buttons_on("released")
-    print("released touch at:",event.finger_id)
 
 def draw_sceen():
     for sprite in all_sprites:
