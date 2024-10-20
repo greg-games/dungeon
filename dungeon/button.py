@@ -52,8 +52,9 @@ class Button(Actor):
         self.hitbox.center = pos
         self.background.pos = pos
 
-    def on_release(self,input):
-        if (self.mode != "unpressed" and self.can_interact):
+    def on_release(self,mouse_hitbox,input):
+        if (iscolliding(mouse_hitbox, self.hitbox) and self.can_interact
+            and self.mode != "unpressed"):
             self.mode = "unpressed"
             self._orig_surf.set_alpha(255)
             if self._released != None:
