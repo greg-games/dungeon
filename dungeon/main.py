@@ -207,7 +207,7 @@ def set_up_game():
 
     maze_number = -1 #int(input("maze_number: "))
     if maze_number == -1:
-        maze = Maze(min(randint(floor+4,floor+6),13),min(randint(floor//2+2,floor//2+4),8),[])
+        maze = Maze(min(randint(floor+4,floor+5),13),min(randint(floor//2+2,floor//2+3),8),[])
     else: 
         maze = mazes[maze_number]
     print(maze)
@@ -477,12 +477,13 @@ def realign_player():
 def entity_move():
     for sprite in all_sprites:
         if isinstance(sprite,Enemy):
+            if (sprite.state == "die" and sprite.frame > 2
+                and maze.rooms[room_number].has_closed_chest):
+                open_chest(maze.get_chest_for(room_number))
             if sprite.is_dead:
                 maze.rooms[room_number].enemies.remove(sprite)
                 all_sprites.remove(sprite)
                 maze.rooms[room_number].no_skeletons -= 1
-                if maze.rooms[room_number].has_closed_chest:
-                    open_chest(maze.get_chest_for(room_number))
             else:
                 if (sprite.state == "running" or sprite.frame == 0):
                     if sprite.x > player.x:
@@ -613,6 +614,8 @@ def on_key_down():
             player.change_state("duck")
         elif keyboard.space and attack_button.can_interact:
             player.change_state("attack1")
+    if keyboard.m:
+        toggle_map()
 
 def on_mouse_up():
     buttons_on("released")
@@ -671,7 +674,7 @@ def draw():
     if not game_ended:
         draw_sceen()
         if map_open:
-            maze_map.draw(maze)
+            maze_map.draw(maze,room_number)
     else:
         Actor("title",(WIDTH/2,HEIGHT/3)).draw()
     draw_ui()

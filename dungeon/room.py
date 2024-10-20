@@ -57,7 +57,7 @@ class Room:
         self.distance = distance
     def chest_type(self,floor):
         if floor <= 4:
-            chest_type = min(self.distance//7,1)
+            chest_type = min(self.distance//7,2)
         else:
             chest_type = min(self.distance//7,3)
         if self.no_of_exits() > 1:
