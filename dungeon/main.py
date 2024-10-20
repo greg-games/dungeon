@@ -634,16 +634,18 @@ def move_mouse_hitbox(pos):
 #fingers = {}
 
 def on_finger_down(event):
-    #x = event.x * HEIGHT
-    #y = event.y * WIDTH
+    x = event.x * HEIGHT
+    y = event.y * WIDTH
     #fingers[event.finger_id] = x, y
-    move_mouse_hitbox(event.pos)
+    move_mouse_hitbox((x,y))
     buttons_on("clicked")
     #print("touched at:",x,y)
 
 def on_finger_up(event):
     #fingers.pop(event.finger_id, None)
-    move_mouse_hitbox(event.pos)
+    x = event.x * HEIGHT
+    y = event.y * WIDTH
+    move_mouse_hitbox((x,y))
     buttons_on("released")
     #print("released touch at:",event.finger_id)
 
