@@ -15,7 +15,7 @@ from global_functions import *
 pygame.display.set_mode((WIDTH, HEIGHT))
 from maze import Maze
 from room import Room
-from tile import Tile, TileAddon, AnimatedTile, Chest, Door
+from tile import *
 from addon import Addon, all_addons
 from entity import Entity, Player, Enemy, update_all_sprites
 from loot import Loot
@@ -280,7 +280,10 @@ def make_addons(room):
         for _ in range(addon.max_number_on_screan):
             if(random() < addon.chance):
                 variant = randrange(addon.number_of_variants)
-                new_addon = TileAddon(addon.name,variant)
+                if(addon.is_anim):
+                    new_addon = AnimatedTileAddon(addon.name,variant,"default",(0,0))
+                else:
+                    new_addon = TileAddon(addon.name,variant)
                 for _ in range(20):
                     new_addon.pos = (randint(addon.x_start,addon.x_end),randint(addon.y_start,addon.y_end))
                     pos_avaible = True
@@ -458,6 +461,17 @@ def realign_player():
                 player.change_state("idle")
             player.update_colliding()
             break
+    for thing in player.colliding:
+        if(thing.name == "spikes"):
+            if(not player.islookingat(thing)):
+                player.change_x(player.x + 10*player.dir)
+            if(iscolliding(player.hitbox,thing)):
+                if(player.x > thing.x):
+                    player.change_x(player.x+thing.right-player.hitbox.left+10)
+                else:
+                    player.change_x(player.x+thing.left-player.hitbox.right-10)
+                player.change_state("hit")
+                player.update_colliding()
     if(player.x < player.hitbox.width*0.6 and maze.rooms[room_number].west() == 1):
         room_number -= 1
         player.change_x(SCENE_WIDTH - player.hitbox.width*0.61)
@@ -666,7 +680,7 @@ load_mazes()
 make_ui()
 title_screen()
 
-#show_hitboxes = True # for debugging only
+show_hitboxes = True # for debugging only
 def draw():
     screen.clear()
     background.draw()

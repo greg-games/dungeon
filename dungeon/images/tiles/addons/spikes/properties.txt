@@ -1,0 +1,8 @@
+chance = 0.1
+max_number_on_screan = 2
+min_distance = 100
+x_start = SCENE_WIDTH/5
+x_end = SCENE_WIDTH*4/5
+y_start = HEIGHT-120-height/2
+y_end = HEIGHT-120-height/2
+is_anim = True

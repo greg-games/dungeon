@@ -16,14 +16,15 @@ class TileAddon(Tile):
 
 triggers ={
     "chest":"click",
-    "door":"click"
+    "door":"click",
+    "spikes":"always"
 }
 
 class AnimatedTile(Tile):
     def __init__(self, name:str, variant:int, state:str, pos:tuple):
         self.state = state
         self.frame = 0
-        self.no_frames = {s:len(os.listdir(f"images/tiles/{name}/variant_{variant}/{s}")) for s in os.listdir(f"images/tiles/{name}/variant_{variant}")}
+        self.no_frames = self.no_frames(name, variant)
         self.triger = triggers[name]
         if self.triger == "always":
             self.is_animating = True
@@ -31,8 +32,14 @@ class AnimatedTile(Tile):
             self.is_animating = False
         self.has_finished_animating = False
         super().__init__(name, variant, pos)
+
+    def no_frames(self, name, variant):
+        return {s:len(os.listdir(f"images/tiles/{name}/variant_{variant}/{s}"))
+                for s in os.listdir(f"images/tiles/{name}/variant_{variant}")}
+    
     def image(self):
         return f"tiles/{self.name}/variant_{self.variant}/{self.state}/{round(self.frame)}"
+    
     def next_frame(self,frame_speed):
         if self.is_animating:
             if self.frame + frame_speed < self.no_frames[self.state] - 1:
@@ -41,6 +48,14 @@ class AnimatedTile(Tile):
                 self.frame = 0   
             else:
                 self.has_finished_animating = True
+
+class AnimatedTileAddon(AnimatedTile):
+    def no_frames(self, name, variant):
+        return {s:len(os.listdir(f"images/tiles/addons/{name}/variant_{variant}/{s}"))
+                for s in os.listdir(f"images/tiles/addons/{name}/variant_{variant}")}
+    
+    def image(self):
+        return f"tiles/addons/{self.name}/variant_{self.variant}/{self.state}/{round(self.frame)}"
 
 chest_loot_table = [
     {
