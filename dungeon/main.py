@@ -680,7 +680,7 @@ load_mazes()
 make_ui()
 title_screen()
 
-show_hitboxes = True # for debugging only
+#show_hitboxes = True # for debugging only
 def draw():
     screen.clear()
     background.draw()
