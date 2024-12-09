@@ -67,7 +67,7 @@ class Entity(Actor):
                                       + self.hitbox_offset*self.dir,
                                        self.y - self.attack_hitbox.height/2)
 
-    def change_state(self,state,dir = None):
+    def change_state(self,state,dir = None,damage = 1):
         if dir != None:
             self.dir = dir
         if self.state != state:
@@ -76,7 +76,7 @@ class Entity(Actor):
             self.update_hitboxes()
             self.toggle_sound("running",["running"])
             if state == "hit":
-                self.health -= 1
+                self.health -= damage
                 if self.health <= 0:
                     self.change_state("die")
 
@@ -161,7 +161,7 @@ class Player(Entity):
             (round(self.frame) >= self._no_frames[self.state]-3)):
             for object in self.attacking:
                 if object.name == "skeleton":
-                    object.change_state("hit")                  
+                    object.change_state("hit")             
 
 class Enemy(Entity):
     def __init__(self,name,variant,difficulty):

@@ -19,6 +19,7 @@ from tile import *
 from addon import Addon, all_addons
 from entity import Entity, Player, Enemy, update_all_sprites
 from loot import Loot
+from heart import Heart
 from button import Button, all_buttons, buttons_on
 from maze_map import MazeMap
 
@@ -90,11 +91,8 @@ def make_ui():
         loot_icons.append(loot_icon)
     x = WIDTH - (UI_BAR_WIDTH*4/5) - 30
     for _ in range(5):
-        heart = Actor(f"ui/heart")
-        heart.lost = Actor(f"ui/lost_heart")
-        heart.name = "heart"
+        heart = Heart()
         heart.pos = (x, heart.height * 1.5)
-        heart.lost.pos = heart.pos
         x += UI_BAR_WIDTH/5
         hearts.append(heart)
     make_buttons()
@@ -554,6 +552,30 @@ def animate_tiles():
                     exit_game()
                     break
 
+def animate_hearts():
+    heart_health = 0
+    for heart in hearts:
+        heart_health += heart.frame
+    if heart_health > player.health*3:
+        side = "right"
+    else:
+        side = "left"
+    for i in range(len(hearts)):
+        if(side == "left"):
+            j = i
+        else:
+            j = 4-i
+        heart = hearts[j]
+        if player.health//3 < j:
+            heart.change_state(0)
+        elif player.health//3 > j:
+            heart.change_state(3)
+        else:
+            heart.change_state(player.health%3)
+        if(round(heart.frame) != heart._goal_frame):
+            heart.animate(dt)
+            break
+
 def open_chest(chest):
     global number_of_found_chests
     chest.is_animating = True
@@ -600,7 +622,7 @@ def title_screen():
     game_ended = True
     background.image = "background/title"
     floor = 0
-    player.health = 5
+    player.health = 15
     for button in all_buttons:
         button.hide()
     play_button.show()
@@ -660,11 +682,8 @@ def draw_ui():
         pygame.draw.rect(screen.surface, (58,58,58), ui_bar_left)
         pygame.draw.rect(screen.surface, (58,58,58), ui_bar_right)
         chest_icon.draw()
-        for i in range(len(hearts)):
-            if player.health > i:
-                hearts[i].draw()
-            else:
-                hearts[i].lost.draw()
+        for heart in hearts:
+            heart.draw()
         for thing in loot_icons:
             thing.draw()
             screen.draw.text(str(loot_collected[thing.name]), midleft = (thing.pos[0] + thing.width/2, thing.pos[1]), color="white", fontsize=50)
@@ -703,6 +722,7 @@ def update():
         animate_tiles()
         animate_entities()
         animate_loot()
+        animate_hearts()
         play_sounds()
         if player.is_dead:
             title_screen()
