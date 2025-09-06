@@ -17,9 +17,6 @@ jobs:
             echo "Attempting to install pygbag"
             python -m pip install pygbag==0.8.6
             echo "Successfully installed pygbag"
-            echo "Attempting to install pygame"
-            python -m pip3 install pygame
-            echo "Successfully installed pygame"
             echo "Attempting to build the game"
             python -m pygbag --build  --ume_block=0 --title 'Greg ganes - Dungeon' $GITHUB_WORKSPACE/dungeon/main.py
             echo "Successfully build the game and complied to WebAssembly"
