@@ -15,7 +15,9 @@ jobs:
     - name: Checkout
       run: |
             echo "Attempting to install pygbag"
-            python -m pip install pygbag==0.9.2
+            python -m pip install pygbag==0.8.6
+            echo "Attempting to install pygame"
+            python -m pip install pygame==2.1.2            
             echo "Successfully installed pygbag"
             echo "Attempting to build the game"
             python -m pygbag --build  --ume_block=0 --title 'Greg ganes - Dungeon' $GITHUB_WORKSPACE/dungeon/main.py
