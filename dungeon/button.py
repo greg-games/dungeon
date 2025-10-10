@@ -1,5 +1,5 @@
 from pgzero.actor import Actor
-from pygame import Rect, surfarray
+from pygame import Rect, Surface, BLEND_RGB_MULT
 from global_functions import *
 from constants import *
 
@@ -8,11 +8,11 @@ buttons_in = dict()
 buttons_out = dict()
 
 def color_surface(surface, red, green, blue):
-    arr = surfarray.pixels3d(surface)
-    arr[:,:,0] = red
-    arr[:,:,1] = green
-    arr[:,:,2] = blue
-
+    colored = surface.copy()
+    color_overlay = Surface(surface.get_size()).convert_alpha()
+    color_overlay.fill((red, green, blue, 255))
+    colored.blit(color_overlay, (0, 0), special_flags=BLEND_RGB_MULT)
+    return colored  # ✅ Pure pygame, web-compatible
 
 def buttons_on(event):
     for button in all_buttons:

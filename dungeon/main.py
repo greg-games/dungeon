@@ -1,8 +1,6 @@
 import pygame
 import pgzrun
-import pygame.surfarray
 import asyncio
-import numpy
 import time
 import touch
 
@@ -588,6 +586,8 @@ def open_chest(chest):
             all_sprites.append(loot)
             all_loot.append(loot)   
 
+#def change_background(new_background):
+
 def toggle_map(set_to:bool = None):
     global map_open
     if set_to != None:
@@ -679,8 +679,8 @@ def draw_sceen():
 
 def draw_ui():
     if not game_ended:
-        pygame.draw.rect(screen.surface, (58,58,58), ui_bar_left)
-        pygame.draw.rect(screen.surface, (58,58,58), ui_bar_right)
+        pygame.draw.rect(screen.surface, (50,22,15), ui_bar_left)#(58,58,58), ui_bar_left)
+        pygame.draw.rect(screen.surface, (50,22,15), ui_bar_right)#(58,58,58), ui_bar_right)
         chest_icon.draw()
         for heart in hearts:
             heart.draw()
@@ -700,6 +700,12 @@ make_ui()
 title_screen()
 
 #show_hitboxes = True # for debugging only
+shop = Actor("tiles/shop/variant_4")
+#shop.x = WIDTH/2
+#shop.bottom = HEIGHT/2
+#shop._orig_surf = pygame.transform.scale(shop._orig_surf,(1206,1206))
+shop.x = WIDTH/2  # 603 + 99
+shop.y = HEIGHT/2 -3#- 36 # 603 + 103
 def draw():
     screen.clear()
     background.draw()
@@ -707,6 +713,7 @@ def draw():
         draw_sceen()
         if map_open:
             maze_map.draw(maze,room_number)
+        shop.draw()
     else:
         Actor("title",(WIDTH/2,HEIGHT/3)).draw()
     draw_ui()
@@ -714,7 +721,7 @@ def draw():
 def update():
     global dt
     dt = clock.tick(60)
-    update_buttons()
+    update_buttons()         
     if not game_ended:
         pressing_up_or_down()
         change_player_speed()
