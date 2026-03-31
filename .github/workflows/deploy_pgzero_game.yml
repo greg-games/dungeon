@@ -17,16 +17,18 @@ jobs:
       uses: actions/setup-python@v5
       with:
         python-version: '3.10'
+        architecture: 'x64'
+
+    - name: Verify Python version
+      run: python --version
 
     - name: Install pygbag
       run: |
-        echo "Installing pygbag 0.9.3"
         python -m pip install --upgrade pip
         python -m pip install pygbag==0.9.3
 
     - name: Build the game
       run: |
-        echo "Building the game with pygbag"
         python -m pygbag --build --ume_block=0 --title "Greg ganes - Dungeon" dungeon/main.py
 
     - name: Upload to GitHub Pages
