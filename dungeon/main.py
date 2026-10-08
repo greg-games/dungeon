@@ -700,15 +700,15 @@ make_ui()
 title_screen()
 
 #show_hitboxes = True # for debugging only
-try:
-    shop = Actor("tiles/shop/variant_4")
+#try:
+    #shop = Actor("tiles/shop/variant_4")
     #shop.x = WIDTH/2
     #shop.bottom = HEIGHT/2
     #shop._orig_surf = pygame.transform.scale(shop._orig_surf,(1206,1206))
-    shop.x = WIDTH/2  # 603 + 99
-    shop.y = HEIGHT/2 -3#- 36 # 603 + 103
-except KeyError:  # images/tiles/shop is not in the repository yet
-    shop = None
+    #shop.x = WIDTH/2  # 603 + 99
+    #shop.y = HEIGHT/2 -3#- 36 # 603 + 103
+#except KeyError:  # images/tiles/shop is not in the repository yet
+shop = None
 def draw():
     screen.clear()
     background.draw()
