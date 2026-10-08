@@ -1,2 +1,2 @@
-pgzero
-pygame
+pygame-ce
+pygbag==0.9.3

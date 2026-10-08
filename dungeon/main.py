@@ -281,7 +281,7 @@ def make_addons(room):
                 else:
                     new_addon = TileAddon(addon.name,variant)
                 for _ in range(20):
-                    new_addon.pos = (randint(addon.x_start,addon.x_end),randint(addon.y_start,addon.y_end))
+                    new_addon.pos = (randint(int(addon.x_start),int(addon.x_end)),randint(int(addon.y_start),int(addon.y_end)))
                     pos_avaible = True
                     for tile in room.tiles:
                         if (not hasattr(addon,"can_collide") or tile.name != addon.can_collide):
@@ -385,7 +385,7 @@ def spawn_skeleton():
     skeleton = Enemy("skeleton","variant_0",floor)
     skeleton.y = HEIGHT - 120 - skeleton.height/2
     for _ in range(1000):
-        x = SCENE_WIDTH/2 + (SCENE_WIDTH/4-30)*(2*randint(0,1)-1)+randint(-(SCENE_WIDTH)/4+150,(SCENE_WIDTH)/4-150)
+        x = SCENE_WIDTH/2 + (SCENE_WIDTH/4-30)*(2*randint(0,1)-1)+randint(int(-(SCENE_WIDTH)/4+150),int((SCENE_WIDTH)/4-150))
         skeleton.change_x(x)
         can_spawn = True
         for enemy in current_room().enemies:
@@ -700,12 +700,15 @@ make_ui()
 title_screen()
 
 #show_hitboxes = True # for debugging only
-shop = Actor("tiles/shop/variant_4")
-#shop.x = WIDTH/2
-#shop.bottom = HEIGHT/2
-#shop._orig_surf = pygame.transform.scale(shop._orig_surf,(1206,1206))
-shop.x = WIDTH/2  # 603 + 99
-shop.y = HEIGHT/2 -3#- 36 # 603 + 103
+try:
+    shop = Actor("tiles/shop/variant_4")
+    #shop.x = WIDTH/2
+    #shop.bottom = HEIGHT/2
+    #shop._orig_surf = pygame.transform.scale(shop._orig_surf,(1206,1206))
+    shop.x = WIDTH/2  # 603 + 99
+    shop.y = HEIGHT/2 -3#- 36 # 603 + 103
+except KeyError:  # images/tiles/shop is not in the repository yet
+    shop = None
 def draw():
     screen.clear()
     background.draw()
@@ -713,7 +716,8 @@ def draw():
         draw_sceen()
         if map_open:
             maze_map.draw(maze,room_number)
-        shop.draw()
+        if shop is not None:
+            shop.draw()
     else:
         Actor("title",(WIDTH/2,HEIGHT/3)).draw()
     draw_ui()
